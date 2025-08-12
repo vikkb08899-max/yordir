@@ -8,10 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "./deploy-git.sh all",
-    "deploy:frontend": "./deploy-git.sh frontend",
-    "deploy:backend": "./deploy-git.sh backend",
-    "deploy:legacy": "./deploy.sh all"
+    "deploy": "./deploy-full.sh",
+    "deploy:frontend": "./deploy-frontend.sh",
+    "deploy:backend": "echo 'Бекенд обновляется автоматически через Git'"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",
