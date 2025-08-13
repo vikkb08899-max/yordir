@@ -238,6 +238,17 @@ const tronWeb = new TronWeb({
 let currentRates = {}; // Для совместимости
 let currentExchangeRates = {}; // Прямые курсы пар
 
+// Маппинг тикеров Coinpaprika
+const COINPAPRIKA_TICKERS = {
+  TRX: 'trx-tron',
+  USDT: 'usdt-tether',
+  SOL: 'sol-solana',
+  BTC: 'btc-bitcoin',
+  ETH: 'eth-ethereum',
+  USDC: 'usdc-usd-coin'
+};
+const SUPPORTED_FIATS = ['USD', 'EUR', 'PLN', 'UAH'];
+
 // Хранилище активных заявок на обмен
 let activeExchanges = new Map(); // requestId -> exchangeData
 
@@ -652,6 +663,40 @@ async function updateCurrencyAPI() {
   });
 }
 
+// Функция для получения курсов с Coinpaprika
+async function updateCoinpaprikaRates() {
+  try {
+    console.log(`[${new Date().toLocaleTimeString()}] Обновляем курсы с Coinpaprika...`);
+    const quotesParam = SUPPORTED_FIATS.join(',');
+
+    for (const [symbol, ticker] of Object.entries(COINPAPRIKA_TICKERS)) {
+      const url = `https://api.coinpaprika.com/v1/tickers/${ticker}?quotes=${quotesParam}`;
+      const res = await fetch(url, { headers: { 'User-Agent': 'CryptoXchange/1.0', 'Accept': 'application/json' } });
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error(`❌ Coinpaprika ${symbol} ${res.status}`, txt);
+        continue;
+      }
+      const data = await res.json();
+      if (!data || !data.quotes) continue;
+
+      for (const fiat of SUPPORTED_FIATS) {
+        const q = data.quotes[fiat];
+        if (q && typeof q.price === 'number' && q.price > 0) {
+          // SYMBOL-FIAT и обратная пара
+          currentExchangeRates[`${symbol}-${fiat}`] = q.price;
+          currentExchangeRates[`${fiat}-${symbol}`] = 1 / q.price;
+        }
+      }
+      // Небольшая пауза между монетами
+      await new Promise(r => setTimeout(r, 300));
+    }
+    console.log('✅ Курсы с Coinpaprika обновлены');
+  } catch (e) {
+    console.error('❌ Ошибка updateCoinpaprikaRates:', e.message);
+  }
+}
+
 // Функция для вычисления только крипто-EUR курсов
 function calculateCrossRates() {
   console.log('🔄 Вычисляем крипто-EUR курсы...');
@@ -672,14 +717,13 @@ function calculateCrossRates() {
 // Основная функция для обновления курсов
 async function updateExchangeRates() {
   console.log(`[${new Date().toLocaleTimeString()}] Обновляем курсы...`);
-  
-  // Сначала получаем курсы с Binance
+  // Сначала Coinpaprika (даёт сразу нужные FIAT)
+  await updateCoinpaprikaRates();
+  // Затем Binance для дополнительных USDT-пар (если доступны)
   await updateBinanceRates();
-  
-  // Затем получаем недостающие курсы с альтернативных источников
+  // Затем альтернативные FX для USD/EUR/PLN/UAH (дополняет кроссы)
   await updateAlternativeRates();
-  
-  // Вычисляем все кросс-курсы
+  // Вычисляем кросс-курсы
   calculateCrossRates();
 }
 
@@ -722,36 +766,49 @@ app.use((req, res, next) => {
 // API для получения курса конкретной пары с наценкой
 app.get('/crypto-fiat-rate/:from/:to', async (req, res) => {
   const { from, to } = req.params;
-  const pair = `${from.toUpperCase()}-${to.toUpperCase()}`;
+  const FROM = from.toUpperCase();
+  const TO = to.toUpperCase();
+  const pair = `${FROM}-${TO}`;
   
   try {
-    const baseRate = currentExchangeRates[pair];
+    let baseRate = currentExchangeRates[pair];
     const margin = currentMargins[pair] || 0;
-    
+
+    // Fallback: через USDT мост
     if (!baseRate) {
-      return res.status(400).json({
-        success: false,
-        error: `Неподдерживаемая валютная пара: ${pair}`
-      });
+      const fromUsdt = currentExchangeRates[`${FROM}-USDT`];
+      const toUsdt = currentExchangeRates[`${TO}-USDT`];
+      if (fromUsdt && toUsdt) baseRate = fromUsdt / toUsdt;
+    }
+    // Fallback: через USD мост
+    if (!baseRate) {
+      const fromUsd = currentExchangeRates[`${FROM}-USD`];
+      const usdTo = currentExchangeRates[`USD-${TO}`];
+      if (fromUsd && usdTo) baseRate = fromUsd * usdTo;
+    }
+    // Fallback: через EUR мост
+    if (!baseRate) {
+      const fromEur = currentExchangeRates[`${FROM}-EUR`];
+      const eurTo = currentExchangeRates[`EUR-${TO}`];
+      if (fromEur && eurTo) baseRate = fromEur * eurTo;
+    }
+
+    if (!baseRate) {
+      return res.status(400).json({ success: false, error: `Неподдерживаемая валютная пара: ${pair}` });
     }
 
     const finalRate = baseRate * (1 + margin / 100);
-    
     res.json({
       success: true,
-      pair: pair,
+      pair,
       baseRate: parseFloat(baseRate.toFixed(8)),
-      margin: margin,
+      margin,
       finalRate: parseFloat(finalRate.toFixed(8)),
       lastUpdate: lastRatesUpdate
     });
-
   } catch (error) {
     console.error('Ошибка при получении курса:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Внутренняя ошибка сервера'
-    });
+    res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
   }
 });
 
