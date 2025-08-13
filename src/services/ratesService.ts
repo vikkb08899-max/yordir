@@ -99,7 +99,7 @@ const ratesStore = {
 // Функция для задержки
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Функция для получения курса с CoinGecko
+// Функция для получения курса с CoinGecko через наш прокси
 async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promise<number | null> {
   const cacheKey = `${cryptoId}-${fiatCurrency}`;
   
@@ -113,8 +113,9 @@ async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promi
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), COINGECKO_CONFIG.TIMEOUT);
 
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
     const response = await fetch(
-      `${COINGECKO_CONFIG.BASE_URL}/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`,
+      `${API_URL}/coingecko/${cryptoId}/${fiatCurrency}`,
       { signal: controller.signal }
     );
 
@@ -124,12 +125,15 @@ async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promi
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const rate = data[cryptoId]?.[fiatCurrency];
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      const rate = result.data[cryptoId]?.[fiatCurrency];
 
-    if (rate && typeof rate === 'number') {
-      ratesStore.cacheRate(cacheKey, rate);
-      return rate;
+      if (rate && typeof rate === 'number') {
+        ratesStore.cacheRate(cacheKey, rate);
+        return rate;
+      }
     }
 
     return null;

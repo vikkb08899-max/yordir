@@ -5,6 +5,9 @@ const TronWeb = require('tronweb');
 const app = express();
 const https = require('https');
 
+// Добавляем поддержку fetch для Node.js
+const fetch = require('node-fetch');
+
 // Telegram Bot
 let bot = null;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -749,6 +752,41 @@ app.get('/exchange-rates', (req, res) => {
     margins: currentMargins,
     lastUpdate: lastRatesUpdate
   });
+});
+
+// Прокси для CoinGecko API
+app.get('/coingecko/:cryptoId/:fiatCurrency', async (req, res) => {
+  try {
+    const { cryptoId, fiatCurrency } = req.params;
+    
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'CryptoXchange/1.0',
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    res.json({
+      success: true,
+      data: data,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Ошибка проксирования CoinGecko API:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // API для получения всех наценок
