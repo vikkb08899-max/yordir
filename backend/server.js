@@ -5,6 +5,11 @@ const TronWeb = require('tronweb');
 const app = express();
 const https = require('https');
 
+// Добавляем fetch для Node.js (если не доступен)
+if (!global.fetch) {
+  global.fetch = require('node-fetch');
+}
+
 // Telegram Bot
 let bot = null;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -239,6 +244,9 @@ let currentMargins = {
 
 let lastRatesUpdate = null;
 let lastCheckedBlock = 0; // Последний проверенный блок
+
+// Кэш для CoinGecko API
+const coinGeckoCache = new Map();
 
 // Функция для получения курсов с Binance
 async function updateBinanceRates() {
@@ -738,6 +746,80 @@ app.get('/crypto-fiat-rate/:from/:to', async (req, res) => {
       success: false,
       error: 'Внутренняя ошибка сервера'
     });
+  }
+});
+
+// API для получения курса с CoinGecko через прокси
+app.get('/coingecko-rate/:cryptoId/:fiatCurrency', async (req, res) => {
+  try {
+    const { cryptoId, fiatCurrency } = req.params;
+    
+    // Проверяем кэш
+    const cacheKey = `${cryptoId}-${fiatCurrency}`;
+    const cached = coinGeckoCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 минут кэш
+      return res.json({
+        success: true,
+        rate: cached.rate,
+        cached: true
+      });
+    }
+
+    // Делаем запрос к CoinGecko API
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CryptoXchange/1.0)',
+        'Accept': 'application/json'
+      },
+      timeout: 10000
+    });
+
+    if (!response.ok) {
+      throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const rate = data[cryptoId]?.[fiatCurrency];
+
+    if (rate && typeof rate === 'number') {
+      // Сохраняем в кэш
+      coinGeckoCache.set(cacheKey, {
+        rate: rate,
+        timestamp: Date.now()
+      });
+
+      res.json({
+        success: true,
+        rate: rate,
+        cached: false
+      });
+    } else {
+      throw new Error('Invalid rate data from CoinGecko');
+    }
+
+  } catch (error) {
+    console.error('❌ Ошибка получения курса с CoinGecko:', error.message);
+    
+    // Возвращаем кэшированное значение, если есть
+    const cacheKey = `${req.params.cryptoId}-${req.params.fiatCurrency}`;
+    const cached = coinGeckoCache.get(cacheKey);
+    
+    if (cached) {
+      res.json({
+        success: true,
+        rate: cached.rate,
+        cached: true,
+        warning: 'Используется кэшированное значение'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Не удалось получить курс',
+        details: error.message
+      });
+    }
   }
 });
 
