@@ -23,7 +23,7 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="bg-black/95 backdrop-blur-xl border-b border-gray-800/50 sticky top-0 z-50">
+    <header className="bg-white/10 backdrop-blur-2xl border-b border-white/20 sticky top-0 z-50 mx-4 mt-4 rounded-2xl shadow-2xl">
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo Section */}
@@ -41,7 +41,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Price Ticker - Desktop */}
-          <div className="hidden lg:flex items-center space-x-4 bg-gray-900/60 backdrop-blur-lg rounded-xl px-4 py-2 border border-gray-700/50">
+          <div className="hidden lg:flex items-center space-x-4 bg-white/10 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20 shadow-lg">
             <div className="flex items-center space-x-2">
               <img src={trxIcon} alt="TRX" className="w-6 h-6" />
               <span className="text-gray-300 font-medium text-sm">TRX/USDT</span>
@@ -103,10 +103,10 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-gray-800/50 py-6 animate-fadeIn">
+          <div className="lg:hidden border-t border-white/20 py-6 animate-fadeIn">
             <div className="flex flex-col space-y-6">
               {/* Mobile Price Ticker */}
-              <div className="bg-gray-900/60 backdrop-blur-lg rounded-xl p-4 border border-gray-700/50">
+              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 border border-white/20 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <img src={trxIcon} alt="TRX" className="w-6 h-6" />

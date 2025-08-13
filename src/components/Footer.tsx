@@ -1,11 +1,11 @@
 import React from 'react';
-import { TrendingUp, Shield, Zap, Users } from 'lucide-react';
+import { Shield, Zap, Users } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-black/80 backdrop-blur-lg border-t border-gray-800 mt-16">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-3 mb-4">
@@ -21,39 +21,39 @@ const Footer: React.FC = () => {
             </p>
           </div>
 
-          {/* Services */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Services</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li className="hover:text-white transition-colors cursor-pointer">Crypto Exchange</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Fiat Exchange</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Trading API</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Portfolio Management</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Mobile Trading</li>
-            </ul>
-          </div>
-
           {/* Legal */}
           <div>
             <h3 className="text-white font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li className="hover:text-white transition-colors cursor-pointer">Privacy Policy</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Terms & Conditions</li>
-              <li className="hover:text-white transition-colors cursor-pointer">AML Policy</li>
-              <li className="hover:text-white transition-colors cursor-pointer">KYC Policy</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Compliance</li>
+              <li>
+                <a href="/privacy" className="hover:text-white transition-colors cursor-pointer">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="/terms" className="hover:text-white transition-colors cursor-pointer">
+                  Terms & Conditions
+                </a>
+              </li>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Features */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Support</h3>
+            <h3 className="text-white font-semibold mb-4">Features</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li className="hover:text-white transition-colors cursor-pointer">Help Center</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Live Chat</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Email Support</li>
-              <li className="hover:text-white transition-colors cursor-pointer">API Documentation</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Status Page</li>
+              <li className="flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-green-400" />
+                <span>SSL Secured</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span>99.9% Uptime</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-blue-400" />
+                <span>24/7 Support</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -61,7 +61,11 @@ const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col lg:flex-row items-center justify-between">
-            <div className="flex items-center space-x-6 mb-4 lg:mb-0">
+            <div className="text-sm text-gray-400 mb-4 lg:mb-0">
+              © 2025 CryptoXchange. All rights reserved.
+            </div>
+            
+            <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2 text-sm text-gray-400">
                 <Shield className="w-4 h-4 text-green-400" />
                 <span>SSL Secured</span>
@@ -74,10 +78,6 @@ const Footer: React.FC = () => {
                 <Users className="w-4 h-4 text-blue-400" />
                 <span>24/7 Support</span>
               </div>
-            </div>
-            
-            <div className="text-sm text-gray-400">
-              © 2025 CryptoXchange. All rights reserved.
             </div>
           </div>
         </div>
