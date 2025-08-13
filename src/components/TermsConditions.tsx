@@ -1,6 +1,7 @@
 import React from 'react';
-import { FileText, AlertTriangle, CheckCircle, XCircle, Shield, Users } from 'lucide-react';
+import { FileText, AlertTriangle, CheckCircle, XCircle, Shield, Users, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Link } from 'react-router-dom';
 
 const TermsConditions: React.FC = () => {
   const { t } = useLanguage();
@@ -22,6 +23,15 @@ const TermsConditions: React.FC = () => {
             <p className="text-gray-400 text-lg">
               {t('terms.lastUpdated')}
             </p>
+            <div className="mt-6">
+              <Link 
+                to="/" 
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-all duration-300 transform hover:scale-105"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Вернуться на главную</span>
+              </Link>
+            </div>
           </div>
 
           {/* Content */}

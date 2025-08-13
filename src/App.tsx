@@ -62,6 +62,19 @@ function FeaturesGrid() {
 function HomePage() {
   const { t } = useLanguage();
   
+  // Обработка якорных ссылок при загрузке страницы
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const element = document.getElementById(hash.substring(1));
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, []);
+  
   return (
     <>
       {/* Hero Section */}

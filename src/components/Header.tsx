@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, Menu, X, Wallet, Bell, User, Shield, FileText, Globe } from 'lucide-react';
 import { useExchangeRates } from '../services/ratesService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Link, useLocation } from 'react-router-dom';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -11,6 +12,7 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { rates, isLoading } = useExchangeRates();
   const { t, language, setLanguage } = useLanguage();
+  const location = useLocation();
 
   // Вычисляем цену TRX в USDT
   const price = rates.TRX_TO_USDT;
@@ -24,8 +26,22 @@ const Header: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Функция для правильной навигации к секциям
+  const scrollToSection = (sectionId: string) => {
+    if (location.pathname !== '/') {
+      // Если мы не на главной странице, сначала переходим на главную
+      window.location.href = `/#${sectionId}`;
+    } else {
+      // Если мы на главной странице, просто скроллим к секции
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
-    <header className="bg-white/10 backdrop-blur-2xl border-b border-white/20 sticky top-0 z-50 mx-4 mt-4 rounded-2xl shadow-2xl">
+    <header className="bg-gray-900/80 backdrop-blur-2xl border-b border-gray-700/50 sticky top-0 z-50 mx-4 mt-4 rounded-2xl shadow-2xl">
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo Section */}
@@ -43,7 +59,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Price Ticker - Desktop */}
-          <div className="hidden lg:flex items-center space-x-4 bg-white/10 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/20 shadow-lg">
+          <div className="hidden lg:flex items-center space-x-4 bg-gray-900/80 backdrop-blur-xl rounded-xl px-4 py-2 border border-gray-700/50 shadow-lg">
             <div className="flex items-center space-x-2">
               <img src={trxIcon} alt="TRX" className="w-6 h-6" />
               <span className="text-gray-300 font-medium text-sm">TRX/USDT</span>
@@ -64,26 +80,35 @@ const Header: React.FC = () => {
           {/* Navigation & Actions - Desktop */}
           <div className="hidden lg:flex items-center space-x-6">
             <nav className="flex items-center space-x-8">
-              <a href="#exchange" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+              <button 
+                onClick={() => scrollToSection('exchange')}
+                className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group"
+              >
                 {t('exchange.title')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="#crypto-fiat" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+              </button>
+              <button 
+                onClick={() => scrollToSection('crypto-fiat')}
+                className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group"
+              >
                 {t('cryptoFiat.title')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="#stats" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+              </button>
+              <button 
+                onClick={() => scrollToSection('stats')}
+                className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group"
+              >
                 {t('liveStats.title')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="/privacy" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+              </button>
+              <Link to="/privacy" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
                 {t('footer.privacy')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-              <a href="/terms" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+              </Link>
+              <Link to="/terms" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
                 {t('footer.terms')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
-              </a>
+              </Link>
             </nav>
             
             <div className="flex items-center space-x-3">
@@ -117,7 +142,7 @@ const Header: React.FC = () => {
           <div className="lg:hidden border-t border-white/20 py-6 animate-fadeIn">
             <div className="flex flex-col space-y-6">
               {/* Mobile Price Ticker */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 border border-white/20 shadow-lg">
+              <div className="bg-gray-900/80 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <img src={trxIcon} alt="TRX" className="w-6 h-6" />
@@ -140,26 +165,35 @@ const Header: React.FC = () => {
 
               {/* Mobile Navigation */}
               <nav className="flex flex-col space-y-4">
-                <a href="#exchange" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                <button 
+                  onClick={() => scrollToSection('exchange')}
+                  className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50 w-full text-left"
+                >
                   <TrendingUp className="w-5 h-5" />
                   <span className="font-medium">{t('exchange.title')}</span>
-                </a>
-                <a href="#crypto-fiat" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                </button>
+                <button 
+                  onClick={() => scrollToSection('crypto-fiat')}
+                  className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50 w-full text-left"
+                >
                   <Wallet className="w-5 h-5" />
                   <span className="font-medium">{t('cryptoFiat.title')}</span>
-                </a>
-                <a href="#stats" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                </button>
+                <button 
+                  onClick={() => scrollToSection('stats')}
+                  className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50 w-full text-left"
+                >
                   <User className="w-5 h-5" />
                   <span className="font-medium">{t('liveStats.title')}</span>
-                </a>
-                <a href="/privacy" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                </button>
+                <Link to="/privacy" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <Shield className="w-5 h-5" />
                   <span className="font-medium">{t('footer.privacy')}</span>
-                </a>
-                <a href="/terms" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                </Link>
+                <Link to="/terms" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <FileText className="w-5 h-5" />
                   <span className="font-medium">{t('footer.terms')}</span>
-                </a>
+                </Link>
                 
                 {/* Mobile Language Switcher */}
                 <button 
