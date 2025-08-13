@@ -2007,9 +2007,24 @@ app.get('/api/simpleswap/v3/pairs-all', async (req, res) => {
 
 app.get('/simpleswap/v3/pairs-for', async (req, res) => {
   try {
-    const { ticker, network } = req.query;
+    const { ticker } = req.query;
+    let { network } = req.query;
     if (!ticker) return res.status(400).json({ success: false, error: 'ticker обязателен' });
-    const path = network ? `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}` : `/v3/pairs/${encodeURIComponent(String(ticker))}`;
+
+    // Авто-определение сети, если не указана
+    if (!network) {
+      const curBase = `${SIMPLESWAP_BASE}/v3/currencies`;
+      let curResp = await fetch(curBase, { headers: { 'X-API-KEY': SIMPLESWAP_API_KEY, 'Accept': 'application/json', 'User-Agent': 'CryptoXchange/1.0' } });
+      if (!curResp.ok) curResp = await fetch(`${curBase}?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`);
+      const curJson = await curResp.json().catch(() => null);
+      if (Array.isArray(curJson)) {
+        const entry = curJson.find((c) => c && String(c.ticker).toLowerCase() === String(ticker).toLowerCase());
+        if (entry && entry.network) network = entry.network;
+      }
+    }
+    if (!network) return res.status(400).json({ success: false, error: 'network обязателен для v3/pairs/{ticker}/{network}' });
+
+    const path = `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}`;
     const base = `${SIMPLESWAP_BASE}${path}`;
     let response = await fetch(base, { headers: { 'X-API-KEY': SIMPLESWAP_API_KEY, 'Accept': 'application/json', 'User-Agent': 'CryptoXchange/1.0' } });
     if (!response.ok) {
@@ -2028,9 +2043,23 @@ app.get('/simpleswap/v3/pairs-for', async (req, res) => {
 });
 app.get('/api/simpleswap/v3/pairs-for', async (req, res) => {
   try {
-    const { ticker, network } = req.query;
+    const { ticker } = req.query;
+    let { network } = req.query;
     if (!ticker) return res.status(400).json({ success: false, error: 'ticker обязателен' });
-    const path = network ? `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}` : `/v3/pairs/${encodeURIComponent(String(ticker))}`;
+
+    if (!network) {
+      const curBase = `${SIMPLESWAP_BASE}/v3/currencies`;
+      let curResp = await fetch(curBase, { headers: { 'X-API-KEY': SIMPLESWAP_API_KEY, 'Accept': 'application/json', 'User-Agent': 'CryptoXchange/1.0' } });
+      if (!curResp.ok) curResp = await fetch(`${curBase}?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`);
+      const curJson = await curResp.json().catch(() => null);
+      if (Array.isArray(curJson)) {
+        const entry = curJson.find((c) => c && String(c.ticker).toLowerCase() === String(ticker).toLowerCase());
+        if (entry && entry.network) network = entry.network;
+      }
+    }
+    if (!network) return res.status(400).json({ success: false, error: 'network обязателен для v3/pairs/{ticker}/{network}' });
+
+    const path = `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}`;
     const base = `${SIMPLESWAP_BASE}${path}`;
     let response = await fetch(base, { headers: { 'X-API-KEY': SIMPLESWAP_API_KEY, 'Accept': 'application/json', 'User-Agent': 'CryptoXchange/1.0' } });
     if (!response.ok) {
