@@ -331,6 +331,35 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
   ratesStore.setLoading(true);
 
   try {
+    // Пытаемся получить готовые курсы с бэкенда
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
+    const backendResp = await fetch(`${API_URL}/exchange-rates`);
+    if (backendResp.ok) {
+      const backendData = await backendResp.json();
+      if (backendData.success && backendData.exchangeRates) {
+        const exchangeRates = backendData.exchangeRates as Record<string, number>;
+        const upper: Record<string, number> = Object.fromEntries(
+          Object.entries(exchangeRates).map(([k, v]) => [k.toUpperCase(), v])
+        );
+        // Вычисляем TRX/USDT из TRX-USD и USDT-USD при необходимости
+        let trxToUsdt = upper['TRX-USDT'];
+        const trxUsd = upper['TRX-USD'];
+        const usdtUsd = upper['USDT-USD'];
+        if (!trxToUsdt && trxUsd && usdtUsd) {
+          trxToUsdt = trxUsd / usdtUsd;
+          upper['TRX-USDT'] = trxToUsdt;
+          upper['USDT-TRX'] = 1 / trxToUsdt;
+        }
+        const rates: ExchangeRates = {
+          TRX_TO_USDT: trxToUsdt || ratesStore.rates.TRX_TO_USDT || 0,
+          USDT_TO_TRX: upper['USDT-TRX'] || (trxToUsdt ? 1 / trxToUsdt : ratesStore.rates.USDT_TO_TRX || 0),
+          ...upper
+        };
+        const lastUpdate = backendData.lastUpdate || new Date().toISOString();
+        ratesStore.updateRates(rates, lastUpdate);
+        return { success: true, rates, lastUpdate };
+      }
+    }
     // Разбиваем криптовалюты на два батча
     const cryptoIds = Object.values(CRYPTO_IDS);
     const coinpaprikaIds = Object.values(COINPAPRIKA_IDS);
