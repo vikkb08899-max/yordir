@@ -2022,7 +2022,32 @@ app.get('/simpleswap/v3/pairs-for', async (req, res) => {
         if (entry && entry.network) network = entry.network;
       }
     }
-    if (!network) return res.status(400).json({ success: false, error: 'network обязателен для v3/pairs/{ticker}/{network}' });
+
+    if (!network) {
+      // Фолбэк: получаем все пары и фильтруем по тикеру без сети
+      const pairsBase = `${SIMPLESWAP_BASE}/v3/pairs`;
+      let pResp = await fetch(pairsBase, { headers: { 'X-API-KEY': SIMPLESWAP_API_KEY, 'Accept': 'application/json', 'User-Agent': 'CryptoXchange/1.0' } });
+      if (!pResp.ok) pResp = await fetch(`${pairsBase}?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`);
+      if (!pResp.ok) {
+        const text = await pResp.text().catch(() => '');
+        return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${pResp.status}`, details: text });
+      }
+      const pairsJson = await pResp.json().catch(() => []);
+      const want = String(ticker).toLowerCase();
+      const set = new Set();
+      if (Array.isArray(pairsJson)) {
+        for (const item of pairsJson) {
+          try {
+            const from = item?.from || item?.[0];
+            const to = item?.to || item?.[1];
+            const fromTicker = String(from?.ticker || '').toLowerCase();
+            const toTicker = String(to?.ticker || '').toLowerCase();
+            if (fromTicker === want && toTicker) set.add(toTicker);
+          } catch {}
+        }
+      }
+      return res.json({ success: true, pairs: Array.from(set) });
+    }
 
     const path = `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}`;
     const base = `${SIMPLESWAP_BASE}${path}`;
@@ -2057,7 +2082,31 @@ app.get('/api/simpleswap/v3/pairs-for', async (req, res) => {
         if (entry && entry.network) network = entry.network;
       }
     }
-    if (!network) return res.status(400).json({ success: false, error: 'network обязателен для v3/pairs/{ticker}/{network}' });
+
+    if (!network) {
+      const pairsBase = `${SIMPLESWAP_BASE}/v3/pairs`;
+      let pResp = await fetch(pairsBase, { headers: { 'X-API-KEY': SIMPLESWAP_API_KEY, 'Accept': 'application/json', 'User-Agent': 'CryptoXchange/1.0' } });
+      if (!pResp.ok) pResp = await fetch(`${pairsBase}?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`);
+      if (!pResp.ok) {
+        const text = await pResp.text().catch(() => '');
+        return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${pResp.status}`, details: text });
+      }
+      const pairsJson = await pResp.json().catch(() => []);
+      const want = String(ticker).toLowerCase();
+      const set = new Set();
+      if (Array.isArray(pairsJson)) {
+        for (const item of pairsJson) {
+          try {
+            const from = item?.from || item?.[0];
+            const to = item?.to || item?.[1];
+            const fromTicker = String(from?.ticker || '').toLowerCase();
+            const toTicker = String(to?.ticker || '').toLowerCase();
+            if (fromTicker === want && toTicker) set.add(toTicker);
+          } catch {}
+        }
+      }
+      return res.json({ success: true, pairs: Array.from(set) });
+    }
 
     const path = `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}`;
     const base = `${SIMPLESWAP_BASE}${path}`;
