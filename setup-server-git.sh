@@ -8,7 +8,7 @@ set -e
 echo "🚀 Настройка сервера для Git workflow..."
 
 # Настройки
-GIT_REPO="https://github.com/yourusername/projtron01.git"  # ЗАМЕНИТЕ на ваш репозиторий
+GIT_REPO="https://github.com/vikkb08899-max/yordir.git"  # Ваш репозиторий
 PROJECT_PATH="/home/projtron01"
 DOMAIN="cryptoxchange.click"
 

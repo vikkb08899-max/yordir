@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Menu, X, Wallet, Bell, User } from 'lucide-react';
+import { TrendingUp, Menu, X, Wallet, Bell, User, Shield, FileText } from 'lucide-react';
 import { useExchangeRates } from '../services/ratesService';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
@@ -36,9 +36,9 @@ const Header: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                TronDirect
+                CryptoXchange
               </h1>
-              <p className="text-xs text-gray-400 font-medium tracking-wide">PROFESSIONAL TRADING</p>
+              <p className="text-xs text-gray-400 font-medium tracking-wide">GLOBAL CRYPTO EXCHANGE</p>
             </div>
           </div>
 
@@ -74,6 +74,14 @@ const Header: React.FC = () => {
               </a>
               <a href="#stats" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
                 Statistics
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="/privacy" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+                Privacy
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="/terms" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
+                Terms
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
             </nav>
@@ -134,6 +142,14 @@ const Header: React.FC = () => {
                 <a href="#stats" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <User className="w-5 h-5" />
                   <span className="font-medium">Statistics</span>
+                </a>
+                <a href="/privacy" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                  <Shield className="w-5 h-5" />
+                  <span className="font-medium">Privacy Policy</span>
+                </a>
+                <a href="/terms" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
+                  <FileText className="w-5 h-5" />
+                  <span className="font-medium">Terms & Conditions</span>
                 </a>
               </nav>
             </div>

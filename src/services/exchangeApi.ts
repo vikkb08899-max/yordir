@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL ||
     ? '/api' 
     : 'http://localhost:3000');
 
-export type Currency = 'TRX' | 'USDT';
+export type Currency = 'TRX' | 'USDT' | 'SOL' | 'BTC' | 'USDC' | 'ETH';
 
 export interface ExchangeRequest {
   from: Currency;

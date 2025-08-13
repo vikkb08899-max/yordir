@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 import { Banknote, MapPin, Phone, Send, Globe, CheckCircle } from 'lucide-react';
+// Импортируем иконки
+import trxIcon from '/icon-trx.png';
+import usdtIcon from '/icon-usdt.png';
+import solIcon from '/icon-sol.png';
+import btcIcon from '/icon-btc.png';
+import usdcIcon from '/icon-usdc.png';
+import ethIcon from '/icons8-ethereum-512.png';
 
 interface Country {
   code: string;
@@ -44,46 +51,76 @@ const CryptoFiat: React.FC = () => {
       code: 'DE',
       name: 'Германия',
       flag: '🇩🇪',
-      cities: ['Берлин', 'Мюнхен', 'Гамбург', 'Франкфурт', 'Кёльн', 'Дюссельдорф']
+      cities: ['Берлин', 'Мюнхен', 'Гамбург', 'Франкфурт', 'Кёльн', 'Дюссельдорф', 'Штутгарт', 'Дортмунд', 'Эссен', 'Лейпциг']
     },
     {
       code: 'FR',
       name: 'Франция',
       flag: '🇫🇷',
-      cities: ['Париж', 'Лион', 'Марсель', 'Тулуза', 'Ницца', 'Страсбург']
+      cities: ['Париж', 'Лион', 'Марсель', 'Тулуза', 'Ницца', 'Страсбург', 'Монпелье', 'Бордо', 'Лилль', 'Нант']
     },
     {
       code: 'IT',
       name: 'Италия',
       flag: '🇮🇹',
-      cities: ['Рим', 'Милан', 'Неаполь', 'Турин', 'Флоренция', 'Венеция']
+      cities: ['Рим', 'Милан', 'Неаполь', 'Турин', 'Флоренция', 'Венеция', 'Палермо', 'Генуя', 'Болонья', 'Бари']
     },
     {
       code: 'ES',
       name: 'Испания',
       flag: '🇪🇸',
-      cities: ['Мадрид', 'Барселона', 'Валенсия', 'Севилья', 'Бильбао', 'Малага']
+      cities: ['Мадрид', 'Барселона', 'Валенсия', 'Севилья', 'Бильбао', 'Малага', 'Сарагоса', 'Мурсия', 'Пальма', 'Лас-Пальмас']
     },
     {
-      code: 'NL',
-      name: 'Нидерланды',
-      flag: '🇳🇱',
-      cities: ['Амстердам', 'Роттердам', 'Гаага', 'Утрехт', 'Эйндховен']
+      code: 'PL',
+      name: 'Польша',
+      flag: '🇵🇱',
+      cities: ['Варшава', 'Краков', 'Лодзь', 'Вроцлав', 'Познань', 'Гданьск', 'Щецин', 'Быдгощ', 'Люблин', 'Катовице']
+    },
+    {
+      code: 'UA',
+      name: 'Украина',
+      flag: '🇺🇦',
+      cities: ['Киев', 'Харьков', 'Одесса', 'Днепр', 'Донецк', 'Запорожье', 'Львов', 'Кривой Рог', 'Николаев', 'Мариуполь']
     }
   ];
 
+  // Функция для получения иконки криптовалюты
+  const getCryptoIcon = (symbol: string) => {
+    switch (symbol) {
+      case 'TRX':
+        return trxIcon;
+      case 'USDT':
+        return usdtIcon;
+      case 'SOL':
+        return solIcon;
+      case 'BTC':
+        return btcIcon;
+      case 'ETH':
+        return ethIcon;
+      case 'USDC':
+        return usdcIcon;
+      default:
+        return usdtIcon;
+    }
+  };
+
   // Доступные криптовалюты
   const cryptoOptions: CryptoOption[] = [
-    { symbol: 'TRX', name: 'Tron', icon: '/icon-trx.png' },
-    { symbol: 'USDT', name: 'Tether USD', icon: '/icon-usdt.png' },
-    { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
-    { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
-    { symbol: 'USDC', name: 'USD Coin', icon: '$' }
+    { symbol: 'TRX', name: 'Tron', icon: trxIcon },
+    { symbol: 'USDT', name: 'Tether USD', icon: usdtIcon },
+    { symbol: 'SOL', name: 'Solana', icon: solIcon },
+    { symbol: 'BTC', name: 'Bitcoin', icon: btcIcon },
+    { symbol: 'ETH', name: 'Ethereum', icon: ethIcon },
+    { symbol: 'USDC', name: 'USD Coin', icon: usdcIcon }
   ];
 
   // Доступные фиатные валюты
   const fiatOptions: FiatOption[] = [
-    { symbol: 'EUR', name: 'Евро', icon: '€' }
+    { symbol: 'EUR', name: 'Евро', icon: '€' },
+    { symbol: 'USD', name: 'Доллар США', icon: '$' },
+    { symbol: 'PLN', name: 'Польский злотый', icon: 'zł' },
+    { symbol: 'UAH', name: 'Украинская гривна', icon: '₴' }
   ];
 
   // Функция для получения курса и расчета суммы
@@ -327,11 +364,7 @@ const CryptoFiat: React.FC = () => {
                         : 'bg-gray-800/50 text-gray-300 hover:text-white hover:bg-gray-700/50'
                     }`}
                   >
-                    {crypto.icon.startsWith('/') ? (
-                      <img src={crypto.icon} alt={crypto.symbol} className="w-5 h-5" />
-                    ) : (
-                      <span className="text-lg">{crypto.icon}</span>
-                    )}
+                    <img src={crypto.icon} alt={crypto.symbol} className="w-5 h-5" />
                     <span>{crypto.symbol}</span>
                   </button>
                 ))}
@@ -396,11 +429,7 @@ const CryptoFiat: React.FC = () => {
                         : 'bg-gray-800/50 text-gray-300 hover:text-white hover:bg-gray-700/50'
                     }`}
                   >
-                    {crypto.icon.startsWith('/') ? (
-                      <img src={crypto.icon} alt={crypto.symbol} className="w-5 h-5" />
-                    ) : (
-                      <span className="text-lg">{crypto.icon}</span>
-                    )}
+                    <img src={crypto.icon} alt={crypto.symbol} className="w-5 h-5" />
                     <span>{crypto.symbol}</span>
                   </button>
                 ))}

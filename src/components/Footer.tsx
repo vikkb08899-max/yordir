@@ -13,37 +13,37 @@ const Footer: React.FC = () => {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">TRX Exchange</h1>
-                <p className="text-xs text-gray-400">Professional Trading</p>
+                <h1 className="text-xl font-bold text-white">CryptoXchange</h1>
+                <p className="text-xs text-gray-400">Global Crypto Exchange</p>
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              The most advanced TRX/USDT trading platform with instant exchanges, 
-              secure lending, and professional-grade tools.
+              Professional cryptocurrency exchange operating worldwide with instant 
+              crypto-to-crypto, crypto-to-fiat, and fiat-to-crypto exchanges.
             </p>
           </div>
 
-          {/* Features */}
+          {/* Services */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Features</h3>
+            <h3 className="text-white font-semibold mb-4">Services</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li className="hover:text-white transition-colors cursor-pointer">Instant Exchange</li>
-              <li className="hover:text-white transition-colors cursor-pointer">TRX Advance</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Live Trading Chart</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Real-time Stats</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Mobile App</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Crypto Exchange</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Fiat Exchange</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Trading API</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Portfolio Management</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Mobile Trading</li>
             </ul>
           </div>
 
-          {/* Security */}
+          {/* Legal */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Security</h3>
+            <h3 className="text-white font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li className="hover:text-white transition-colors cursor-pointer">Cold Storage</li>
-              <li className="hover:text-white transition-colors cursor-pointer">2FA Authentication</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Insurance Coverage</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Audit Reports</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Bug Bounty</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Privacy Policy</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Terms & Conditions</li>
+              <li className="hover:text-white transition-colors cursor-pointer">AML Policy</li>
+              <li className="hover:text-white transition-colors cursor-pointer">KYC Policy</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Compliance</li>
             </ul>
           </div>
 
@@ -52,9 +52,9 @@ const Footer: React.FC = () => {
             <h3 className="text-white font-semibold mb-4">Support</h3>
             <ul className="space-y-2 text-sm text-gray-400">
               <li className="hover:text-white transition-colors cursor-pointer">Help Center</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Live Chat</li>
+              <li className="hover:text-white transition-colors cursor-pointer">Email Support</li>
               <li className="hover:text-white transition-colors cursor-pointer">API Documentation</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Contact Us</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Community</li>
               <li className="hover:text-white transition-colors cursor-pointer">Status Page</li>
             </ul>
           </div>
@@ -79,7 +79,7 @@ const Footer: React.FC = () => {
             </div>
             
             <div className="text-sm text-gray-400">
-              © 2025 TRX Exchange. All rights reserved.
+              © 2025 CryptoXchange. All rights reserved.
             </div>
           </div>
         </div>

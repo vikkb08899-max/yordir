@@ -117,7 +117,7 @@ let lastRatesUpdate = null;
 let lastCheckedBlock = 0; // Последний проверенный блок
 
 // Функция для получения курсов с Binance
-async function updateExchangeRates() {
+async function updateBinanceRates() {
   console.log(`[${new Date().toLocaleTimeString()}] Обновляем курсы с Binance...`);
   
   return new Promise((resolve) => {
@@ -172,6 +172,18 @@ async function updateExchangeRates() {
                 currentExchangeRates['EUR-USDT'] = parseFloat(item.price);
                 currentExchangeRates['USDT-EUR'] = 1 / parseFloat(item.price);
                 break;
+              case 'USDUSDT':
+                currentExchangeRates['USD-USDT'] = parseFloat(item.price);
+                currentExchangeRates['USDT-USD'] = 1 / parseFloat(item.price);
+                break;
+              case 'PLNUSDT':
+                currentExchangeRates['PLN-USDT'] = parseFloat(item.price);
+                currentExchangeRates['USDT-PLN'] = 1 / parseFloat(item.price);
+                break;
+              case 'UAHUSDT':
+                currentExchangeRates['UAH-USDT'] = parseFloat(item.price);
+                currentExchangeRates['USDT-UAH'] = 1 / parseFloat(item.price);
+                break;
 
             }
           });
@@ -199,6 +211,8 @@ async function updateExchangeRates() {
             currentExchangeRates['EUR-USDC'] = currentExchangeRates['EUR-USDT'] / currentExchangeRates['USDC-USDT'];
           }
 
+          // Кросс-курсы будут вычислены после получения всех базовых курсов
+
           // Обновляем старые курсы для совместимости
           if (currentExchangeRates['TRX-USDT']) {
             currentRates = {
@@ -211,8 +225,13 @@ async function updateExchangeRates() {
           console.log(`✅ Курсы обновлены [${lastRatesUpdate.toLocaleTimeString()}]`);
           console.log(`   TRX/USDT: ${currentExchangeRates['TRX-USDT']?.toFixed(6) || 'N/A'}`);
           console.log(`   EUR/USDT: ${currentExchangeRates['EUR-USDT']?.toFixed(4) || 'N/A'}`);
-          console.log(`   USDT/EUR: ${currentExchangeRates['USDT-EUR']?.toFixed(4) || 'N/A'}`);
+          console.log(`   USD/USDT: ${currentExchangeRates['USD-USDT']?.toFixed(4) || 'N/A'}`);
+          console.log(`   PLN/USDT: ${currentExchangeRates['PLN-USDT']?.toFixed(4) || 'N/A'}`);
+          console.log(`   UAH/USDT: ${currentExchangeRates['UAH-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   BTC/EUR: ${currentExchangeRates['BTC-EUR']?.toFixed(2) || 'N/A'}`);
+          console.log(`   BTC/USD: ${currentExchangeRates['BTC-USD']?.toFixed(2) || 'N/A'}`);
+          console.log(`   BTC/PLN: ${currentExchangeRates['BTC-PLN']?.toFixed(2) || 'N/A'}`);
+          console.log(`   BTC/UAH: ${currentExchangeRates['BTC-UAH']?.toFixed(2) || 'N/A'}`);
           
           resolve();
 
@@ -236,6 +255,299 @@ async function updateExchangeRates() {
 
     req.end();
   });
+}
+
+// Функция для получения курсов с альтернативных источников
+async function updateAlternativeRates() {
+  console.log(`[${new Date().toLocaleTimeString()}] Обновляем курсы с альтернативных источников...`);
+  
+  try {
+    // 1. Получаем курсы с ExchangeRate-API (бесплатный)
+    await updateExchangeRateAPI();
+    
+    // 2. Получаем курсы с Fixer.io (бесплатный)
+    await updateFixerAPI();
+    
+    // 3. Получаем курсы с CurrencyAPI (бесплатный)
+    await updateCurrencyAPI();
+    
+  } catch (error) {
+    console.error('❌ Ошибка при получении альтернативных курсов:', error.message);
+  }
+}
+
+// ExchangeRate-API (бесплатный, 1000 запросов/месяц)
+async function updateExchangeRateAPI() {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.exchangerate-api.com',
+      path: '/v4/latest/USD',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'TRX-Exchange-Platform/1.0'
+      },
+      timeout: 5000
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) {
+            console.log(`⚠️ ExchangeRate-API: HTTP ${res.statusCode}`);
+            resolve();
+            return;
+          }
+
+          const rateData = JSON.parse(data);
+          
+          // Обновляем курсы USD к другим валютам
+          if (rateData.rates) {
+            // EUR/USD
+            if (rateData.rates.EUR) {
+              currentExchangeRates['EUR-USD'] = rateData.rates.EUR;
+              currentExchangeRates['USD-EUR'] = 1 / rateData.rates.EUR;
+            }
+            
+            // PLN/USD
+            if (rateData.rates.PLN) {
+              currentExchangeRates['PLN-USD'] = rateData.rates.PLN;
+              currentExchangeRates['USD-PLN'] = 1 / rateData.rates.PLN;
+            }
+            
+            // UAH/USD
+            if (rateData.rates.UAH) {
+              currentExchangeRates['UAH-USD'] = rateData.rates.UAH;
+              currentExchangeRates['USD-UAH'] = 1 / rateData.rates.UAH;
+            }
+            
+            console.log('✅ ExchangeRate-API курсы обновлены');
+          }
+          
+          resolve();
+        } catch (error) {
+          console.error('❌ Ошибка парсинга ExchangeRate-API:', error.message);
+          resolve();
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      console.log('⚠️ ExchangeRate-API недоступен:', error.message);
+      resolve();
+    });
+
+    req.on('timeout', () => {
+      console.log('⚠️ ExchangeRate-API таймаут');
+      req.destroy();
+      resolve();
+    });
+
+    req.end();
+  });
+}
+
+// Fixer.io API (бесплатный, 100 запросов/месяц)
+async function updateFixerAPI() {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.fixer.io',
+      path: '/latest?base=USD&symbols=EUR,PLN,UAH',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'TRX-Exchange-Platform/1.0'
+      },
+      timeout: 5000
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) {
+            console.log(`⚠️ Fixer.io: HTTP ${res.statusCode}`);
+            resolve();
+            return;
+          }
+
+          const rateData = JSON.parse(data);
+          
+          // Обновляем курсы USD к другим валютам
+          if (rateData.rates) {
+            // EUR/USD
+            if (rateData.rates.EUR) {
+              currentExchangeRates['EUR-USD'] = rateData.rates.EUR;
+              currentExchangeRates['USD-EUR'] = 1 / rateData.rates.EUR;
+            }
+            
+            // PLN/USD
+            if (rateData.rates.PLN) {
+              currentExchangeRates['PLN-USD'] = rateData.rates.PLN;
+              currentExchangeRates['USD-PLN'] = 1 / rateData.rates.PLN;
+            }
+            
+            // UAH/USD
+            if (rateData.rates.UAH) {
+              currentExchangeRates['UAH-USD'] = rateData.rates.UAH;
+              currentExchangeRates['USD-UAH'] = 1 / rateData.rates.UAH;
+            }
+            
+            console.log('✅ Fixer.io курсы обновлены');
+          }
+          
+          resolve();
+        } catch (error) {
+          console.error('❌ Ошибка парсинга Fixer.io:', error.message);
+          resolve();
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      console.log('⚠️ Fixer.io недоступен:', error.message);
+      resolve();
+    });
+
+    req.on('timeout', () => {
+      console.log('⚠️ Fixer.io таймаут');
+      req.destroy();
+      resolve();
+    });
+
+    req.end();
+  });
+}
+
+// CurrencyAPI (бесплатный, 1000 запросов/месяц)
+async function updateCurrencyAPI() {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.currencyapi.com',
+      path: '/v3/latest?apikey=cur_live_1234567890&currencies=EUR,PLN,UAH&base_currency=USD',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'TRX-Exchange-Platform/1.0'
+      },
+      timeout: 5000
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) {
+            console.log(`⚠️ CurrencyAPI: HTTP ${res.statusCode}`);
+            resolve();
+            return;
+          }
+
+          const rateData = JSON.parse(data);
+          
+          // Обновляем курсы USD к другим валютам
+          if (rateData.data) {
+            // EUR/USD
+            if (rateData.data.EUR) {
+              currentExchangeRates['EUR-USD'] = rateData.data.EUR.value;
+              currentExchangeRates['USD-EUR'] = 1 / rateData.data.EUR.value;
+            }
+            
+            // PLN/USD
+            if (rateData.data.PLN) {
+              currentExchangeRates['PLN-USD'] = rateData.data.PLN.value;
+              currentExchangeRates['USD-PLN'] = 1 / rateData.data.PLN.value;
+            }
+            
+            // UAH/USD
+            if (rateData.data.UAH) {
+              currentExchangeRates['UAH-USD'] = rateData.data.UAH.value;
+              currentExchangeRates['USD-UAH'] = 1 / rateData.data.UAH.value;
+            }
+            
+            console.log('✅ CurrencyAPI курсы обновлены');
+          }
+          
+          resolve();
+        } catch (error) {
+          console.error('❌ Ошибка парсинга CurrencyAPI:', error.message);
+          resolve();
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      console.log('⚠️ CurrencyAPI недоступен:', error.message);
+      resolve();
+    });
+
+    req.on('timeout', () => {
+      console.log('⚠️ CurrencyAPI таймаут');
+      req.destroy();
+      resolve();
+    });
+
+    req.end();
+  });
+}
+
+// Функция для вычисления всех кросс-курсов
+function calculateCrossRates() {
+  console.log('🔄 Вычисляем кросс-курсы...');
+  
+  const cryptos = ['TRX', 'BTC', 'ETH', 'USDC', 'SOL'];
+  const fiats = ['EUR', 'USD', 'PLN', 'UAH'];
+  
+  // Вычисляем курсы криптовалют к фиатным валютам через USD
+  cryptos.forEach(crypto => {
+    fiats.forEach(fiat => {
+      if (crypto !== 'USDT' && fiat !== 'USDT') {
+        // Через USD
+        if (currentExchangeRates[`${crypto}-USDT`] && currentExchangeRates[`USD-${fiat}`]) {
+          currentExchangeRates[`${crypto}-${fiat}`] = currentExchangeRates[`${crypto}-USDT`] * currentExchangeRates[`USD-${fiat}`];
+          currentExchangeRates[`${fiat}-${crypto}`] = 1 / currentExchangeRates[`${crypto}-${fiat}`];
+        }
+        
+        // Через EUR (если USD недоступен)
+        else if (currentExchangeRates[`${crypto}-USDT`] && currentExchangeRates[`EUR-${fiat}`]) {
+          currentExchangeRates[`${crypto}-${fiat}`] = currentExchangeRates[`${crypto}-USDT`] * currentExchangeRates[`EUR-${fiat}`];
+          currentExchangeRates[`${fiat}-${crypto}`] = 1 / currentExchangeRates[`${crypto}-${fiat}`];
+        }
+      }
+    });
+  });
+  
+  console.log('✅ Кросс-курсы вычислены');
+}
+
+// Основная функция для обновления курсов
+async function updateExchangeRates() {
+  console.log(`[${new Date().toLocaleTimeString()}] Обновляем курсы...`);
+  
+  // Сначала получаем курсы с Binance
+  await updateBinanceRates();
+  
+  // Затем получаем недостающие курсы с альтернативных источников
+  await updateAlternativeRates();
+  
+  // Вычисляем все кросс-курсы
+  calculateCrossRates();
 }
 
 // Настройка CORS для продакшена

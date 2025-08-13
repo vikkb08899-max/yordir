@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 export interface ExchangeRates {
   TRX_TO_USDT: number; // 1 TRX = X USDT
   USDT_TO_TRX: number; // 1 USDT = Y TRX
+  // Добавляем поддержку всех валютных пар
+  [key: string]: number;
 }
 
 export interface RatesResponse {
@@ -78,34 +80,33 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
     const data = await response.json();
     
     if (data.success && data.exchangeRates) {
-      // Извлекаем курсы TRX/USDT из новой структуры данных
-      const trxToUsdt = data.exchangeRates['TRX-USDT'];
-      const usdtToTrx = data.exchangeRates['USDT-TRX'];
+      // Извлекаем все курсы из новой структуры данных
+      const exchangeRates = data.exchangeRates;
       
-      // Проверяем корректность полученных курсов
-      if (trxToUsdt > 0 && usdtToTrx > 0) {
-        const rates = {
-          TRX_TO_USDT: trxToUsdt,
-          USDT_TO_TRX: usdtToTrx
-        };
-        
-        ratesStore.updateRates(rates, data.lastUpdate);
-        console.log('✅ Курсы обмена обновлены:', {
-          'TRX → USDT': rates.TRX_TO_USDT,
-          'USDT → TRX': rates.USDT_TO_TRX,
-          'Обновлено': data.lastUpdate ? new Date(data.lastUpdate).toLocaleTimeString() : 'неизвестно'
-        });
-        
-        return {
-          success: true,
-          rates: rates,
-          lastUpdate: data.lastUpdate
-        };
-      } else {
-        throw new Error('Получены некорректные курсы обмена');
-      }
+      // Создаем объект с курсами, включая TRX/USDT для совместимости
+      const rates = {
+        TRX_TO_USDT: exchangeRates['TRX-USDT'] || 0,
+        USDT_TO_TRX: exchangeRates['USDT-TRX'] || 0,
+        ...exchangeRates // Добавляем все остальные курсы
+      };
+      
+      ratesStore.updateRates(rates, data.lastUpdate);
+      console.log('✅ Курсы обмена обновлены:', {
+        'TRX → USDT': rates.TRX_TO_USDT,
+        'USDT → TRX': rates.USDT_TO_TRX,
+        'Обновлено': data.lastUpdate ? new Date(data.lastUpdate).toLocaleTimeString() : 'неизвестно'
+      });
+      
+      // Логируем доступные курсы
+      console.log('📊 Доступные курсы:', Object.keys(exchangeRates).filter(key => exchangeRates[key] > 0));
+      
+      return {
+        success: true,
+        rates: rates,
+        lastUpdate: data.lastUpdate
+      };
     } else {
-      throw new Error('Сервер вернул неуспешный ответ');
+      throw new Error('Получены некорректные курсы обмена');
     }
   } catch (error: any) {
     if (error.name === 'AbortError') {

@@ -10,13 +10,17 @@
     "preview": "vite preview",
     "deploy": "./deploy-full.sh",
     "deploy:frontend": "./deploy-frontend.sh",
-    "deploy:backend": "echo 'Бекенд обновляется автоматически через Git'"
+    "deploy:backend": "./update-server.sh",
+    "update:server": "./update-server.sh",
+    "setup:env": "./setup-env.sh"
   },
   "dependencies": {
+    "@types/react-router-dom": "^5.3.3",
     "lucide-react": "^0.344.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^7.8.0",
     "recharts": "^2.12.0"
   },
   "devDependencies": {

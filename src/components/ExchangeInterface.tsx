@@ -5,6 +5,10 @@ import { useExchangeRates, checkUsdtTransactions } from '../services/ratesServic
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
+import solIcon from '/icon-sol.png';
+import btcIcon from '/icon-btc.png';
+import usdcIcon from '/icon-usdc.png';
+import ethIcon from '/icons8-ethereum-512.png';
 // Импортируем QR код
 import QRCode from 'qrcode';
 
@@ -365,18 +369,33 @@ const ExchangeInterface: React.FC = () => {
 
   // Функция для получения иконки валюты
   const getCurrencyIcon = (currency: Currency) => {
-    return currency === 'TRX' ? trxIcon : usdtIcon;
+    switch (currency) {
+      case 'TRX':
+        return trxIcon;
+      case 'USDT':
+        return usdtIcon;
+      case 'SOL':
+        return solIcon;
+      case 'BTC':
+        return btcIcon;
+      case 'USDC':
+        return usdcIcon;
+      case 'ETH':
+        return ethIcon;
+      default:
+        return usdtIcon;
+    }
   };
 
   return (
-    <div id="exchange" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-          <ArrowUpDown className="w-5 h-5 text-red-400" />
+    <div id="exchange" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-4 md:p-6">
+      <div className="flex items-center space-x-3 mb-4 md:mb-6">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+          <ArrowUpDown className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white">Exchange</h3>
-          <p className="text-gray-400 text-sm">Instant TRX ⇄ USDT trading</p>
+          <h3 className="text-lg md:text-xl font-bold text-white">Exchange</h3>
+          <p className="text-gray-400 text-xs md:text-sm">Instant crypto trading</p>
         </div>
       </div>
       
