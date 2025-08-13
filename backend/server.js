@@ -2102,5 +2102,3 @@ app.post('/api/simpleswap/v3/estimates', async (req, res) => {
 });
 
 initializeServer().catch(console.error); 
-
-initializeServer().catch(console.error); 
