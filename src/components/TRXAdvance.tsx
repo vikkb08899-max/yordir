@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Banknote, MapPin, Phone, Send, Globe, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 // Импортируем иконки
@@ -117,10 +117,42 @@ const CryptoFiat: React.FC = () => {
     { symbol: 'USDC', name: 'USD Coin', icon: usdcIcon }
   ];
 
-  // Доступные фиатные валюты (только EUR)
+  // Доступные фиатные валюты (включая PLN, USD, Гривна)
   const fiatOptions: FiatOption[] = [
-    { symbol: 'EUR', name: 'Евро', icon: '€' }
+    { symbol: 'EUR', name: 'Евро', icon: '€' },
+    { symbol: 'PLN', name: 'Польский злотый', icon: 'zł' },
+    { symbol: 'USD', name: 'Доллар США', icon: '$' },
+    { symbol: 'UAH', name: 'Гривна', icon: '₴' }
   ];
+
+  // Функция для получения курса через CoinGecko API
+  const getCoinGeckoRate = async (cryptoId: string, fiatSymbol: string) => {
+    try {
+      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatSymbol.toLowerCase()}`);
+      const data = await response.json();
+      
+      if (data[cryptoId] && data[cryptoId][fiatSymbol.toLowerCase()]) {
+        return data[cryptoId][fiatSymbol.toLowerCase()];
+      }
+      return null;
+    } catch (error) {
+      console.error('Ошибка получения курса с CoinGecko:', error);
+      return null;
+    }
+  };
+
+  // Маппинг криптовалют к CoinGecko ID
+  const getCryptoId = (symbol: string) => {
+    switch (symbol) {
+      case 'TRX': return 'tron';
+      case 'USDT': return 'tether';
+      case 'SOL': return 'solana';
+      case 'BTC': return 'bitcoin';
+      case 'ETH': return 'ethereum';
+      case 'USDC': return 'usd-coin';
+      default: return 'tether';
+    }
+  };
 
   // Функция для получения курса и расчета суммы
   const calculateAmount = async (inputAmount: string) => {
@@ -131,27 +163,42 @@ const CryptoFiat: React.FC = () => {
       return;
     }
 
-
-
     try {
-      const fromSymbol = exchangeType === 'crypto-to-fiat' ? selectedCrypto.symbol : selectedFiat.symbol;
-      const toSymbol = exchangeType === 'crypto-to-fiat' ? selectedFiat.symbol : selectedCrypto.symbol;
-      
-      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
-      const response = await fetch(`${API_URL}/crypto-fiat-rate/${fromSymbol}/${toSymbol}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setExchangeRate(data.finalRate);
-        setMargin(data.margin);
+      if (exchangeType === 'crypto-to-fiat') {
+        // Получаем курс криптовалюты к фиату через CoinGecko
+        const cryptoId = getCryptoId(selectedCrypto.symbol);
+        const rate = await getCoinGeckoRate(cryptoId, selectedFiat.symbol);
         
-        const calculated = parseFloat(inputAmount) * data.finalRate;
-        setCalculatedAmount(calculated.toFixed(6));
+        if (rate) {
+          setExchangeRate(rate);
+          setMargin(2.5); // Наценка 2.5%
+          
+          const calculated = parseFloat(inputAmount) * rate * (1 - 0.025); // Применяем наценку
+          setCalculatedAmount(calculated.toFixed(2));
+        } else {
+          console.error('Не удалось получить курс с CoinGecko');
+          setCalculatedAmount('');
+          setExchangeRate(0);
+          setMargin(0);
+        }
       } else {
-        console.error('Ошибка получения курса:', data.error);
-        setCalculatedAmount('');
-        setExchangeRate(0);
-        setMargin(0);
+        // Для fiat-to-crypto используем обратный курс
+        const cryptoId = getCryptoId(selectedCrypto.symbol);
+        const rate = await getCoinGeckoRate(cryptoId, selectedFiat.symbol);
+        
+        if (rate) {
+          const reverseRate = 1 / rate;
+          setExchangeRate(reverseRate);
+          setMargin(2.5); // Наценка 2.5%
+          
+          const calculated = parseFloat(inputAmount) * reverseRate * (1 - 0.025); // Применяем наценку
+          setCalculatedAmount(calculated.toFixed(6));
+        } else {
+          console.error('Не удалось получить курс с CoinGecko');
+          setCalculatedAmount('');
+          setExchangeRate(0);
+          setMargin(0);
+        }
       }
     } catch (error) {
       console.error('Ошибка при расчете суммы:', error);
@@ -237,15 +284,16 @@ const CryptoFiat: React.FC = () => {
       <div id="crypto-fiat" className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 h-full">
         <div className="text-center">
           <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                        <h3 className="text-2xl font-bold text-white mb-2">{t('cryptoFiat.requestSubmitted')}</h3>
+          <h3 className="text-2xl font-bold text-white mb-2">{t('cryptoFiat.requestSubmitted')}</h3>
           <p className="text-gray-300 mb-6">
             Ваша заявка на обмен {exchangeType === 'crypto-to-fiat' ? 'криптовалюты на наличные' : 'наличных на криптовалюту'} 
             получена. Мы свяжемся с вами в ближайшее время через указанный контакт.
           </p>
+          
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 mb-6">
             <div className="text-sm text-gray-400 space-y-1">
-                              <div>{t('cryptoFiat.country')}: <span className="text-white">{selectedCountry?.name}</span></div>
-                <div>{t('cryptoFiat.city')}: <span className="text-white">{selectedCity}</span></div>
+              <div>{t('cryptoFiat.country')}: <span className="text-white">{selectedCountry?.name}</span></div>
+              <div>{t('cryptoFiat.city')}: <span className="text-white">{selectedCity}</span></div>
               <div>
                 {exchangeType === 'crypto-to-fiat' ? 'Отдаете' : 'Получаете'}: 
                 <span className="text-white ml-1">{amount} {selectedCrypto?.symbol}</span>

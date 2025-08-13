@@ -36,6 +36,7 @@ const ExchangeInterface: React.FC = () => {
   });
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 минут в секундах
 
   // Загружаем активный обмен из localStorage при инициализации
   useEffect(() => {
@@ -137,6 +138,7 @@ const ExchangeInterface: React.FC = () => {
       setExchangeStarted(true);
       setExchangeCompleted(false);
       setTxHash(null);
+      setTimeLeft(30 * 60); // Сбрасываем таймер на 30 минут
 
       // Сохраняем активный обмен в localStorage
       const exchangeData = {
@@ -242,6 +244,7 @@ const ExchangeInterface: React.FC = () => {
     setExchangeStarted(false);
     setRequestId(null);
     setQrCodeUrl('');
+    setTimeLeft(30 * 60); // Сбрасываем таймер
     
     // Очищаем активный обмен из localStorage при отмене
     localStorage.removeItem('activeExchange');
@@ -277,6 +280,30 @@ const ExchangeInterface: React.FC = () => {
     }
   };
   
+  // Таймер обратного отсчета
+  useEffect(() => {
+    if (exchangeStarted && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [exchangeStarted, timeLeft]);
+
+  // Форматирование времени
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   // Проверка статуса обмена каждые 10 секунд
   useEffect(() => {
     let interval: number | undefined;
@@ -584,18 +611,7 @@ const ExchangeInterface: React.FC = () => {
             )}
           </button>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            {['25%', '50%', '75%', '100%'].map((percent) => (
-              <button
-                key={percent}
-                onClick={() => handleFromAmountChange((1234.56 * parseInt(percent) / 100).toString())}
-                className="py-2 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-lg text-sm transition-colors"
-              >
-                {percent}
-              </button>
-            ))}
-          </div>
+
         </div>
       ) : (
         <div className="space-y-6">
@@ -604,9 +620,10 @@ const ExchangeInterface: React.FC = () => {
               <Clock className="w-5 h-5 text-red-400 mt-0.5" />
               <div>
                 <h5 className="text-red-400 font-medium">{t('exchange.waitingForPayment')}</h5>
-                <p className="text-gray-300 text-sm mt-1">
-                  {t('exchange.youHave1Hour')} {paymentDetails.expirationTime}
-                </p>
+                <div className="flex items-center space-x-3 mt-2">
+                  <div className="text-red-400 font-bold text-lg">{formatTime(timeLeft)}</div>
+                  <div className="text-red-300 text-sm">Осталось времени для оплаты</div>
+                </div>
               </div>
             </div>
           </div>
