@@ -6,7 +6,18 @@ const app = express();
 const https = require('https');
 
 // Добавляем поддержку fetch для Node.js
-const fetch = require('node-fetch');
+let fetch;
+try {
+  fetch = require('node-fetch');
+} catch (error) {
+  console.error('❌ Ошибка загрузки node-fetch:', error.message);
+  // Fallback для Node.js 18+ где fetch доступен глобально
+  if (typeof global.fetch === 'function') {
+    fetch = global.fetch;
+  } else {
+    console.error('❌ fetch недоступен');
+  }
+}
 
 // Telegram Bot
 let bot = null;
@@ -759,7 +770,15 @@ app.get('/coingecko/:cryptoId/:fiatCurrency', async (req, res) => {
   try {
     const { cryptoId, fiatCurrency } = req.params;
     
+    console.log(`🔄 Проксирование запроса: ${cryptoId}/${fiatCurrency}`);
+    
+    // Проверяем доступность fetch
+    if (typeof fetch !== 'function') {
+      throw new Error('fetch недоступен на сервере');
+    }
+    
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`;
+    console.log(`📡 URL: ${url}`);
     
     const response = await fetch(url, {
       headers: {
@@ -768,11 +787,16 @@ app.get('/coingecko/:cryptoId/:fiatCurrency', async (req, res) => {
       }
     });
     
+    console.log(`📊 Статус ответа: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ CoinGecko API error: ${response.status} ${response.statusText}`, errorText);
       throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log(`✅ Получены данные:`, data);
     
     res.json({
       success: true,
@@ -782,11 +806,75 @@ app.get('/coingecko/:cryptoId/:fiatCurrency', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Ошибка проксирования CoinGecko API:', error.message);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
+      details: error.stack
     });
   }
+});
+
+// Альтернативный прокси для CoinGecko API с использованием https модуля
+app.get('/coingecko-alt/:cryptoId/:fiatCurrency', (req, res) => {
+  const { cryptoId, fiatCurrency } = req.params;
+  
+  console.log(`🔄 Альтернативное проксирование: ${cryptoId}/${fiatCurrency}`);
+  
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`;
+  
+  const request = https.get(url, {
+    headers: {
+      'User-Agent': 'CryptoXchange/1.0',
+      'Accept': 'application/json'
+    }
+  }, (response) => {
+    console.log(`📊 Статус ответа: ${response.statusCode} ${response.statusMessage}`);
+    
+    let data = '';
+    
+    response.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    response.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        console.log(`✅ Получены данные:`, jsonData);
+        
+        res.json({
+          success: true,
+          data: jsonData,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('❌ Ошибка парсинга JSON:', error.message);
+        res.status(500).json({
+          success: false,
+          error: 'Ошибка парсинга ответа',
+          details: error.message
+        });
+      }
+    });
+  });
+  
+  request.on('error', (error) => {
+    console.error('❌ Ошибка HTTPS запроса:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Ошибка HTTPS запроса',
+      details: error.message
+    });
+  });
+  
+  request.setTimeout(10000, () => {
+    console.error('❌ Таймаут HTTPS запроса');
+    request.destroy();
+    res.status(500).json({
+      success: false,
+      error: 'Таймаут запроса'
+    });
+  });
 });
 
 // API для получения всех наценок

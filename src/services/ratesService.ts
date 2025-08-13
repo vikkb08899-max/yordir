@@ -14,9 +14,34 @@ export interface RatesResponse {
 }
 
 // Начальные значения курсов
-const DEFAULT_RATES = {
+const DEFAULT_RATES: ExchangeRates = {
   TRX_TO_USDT: 0.085,
-  USDT_TO_TRX: 11.76
+  USDT_TO_TRX: 11.76,
+  // Добавляем статические курсы для фиатных валют
+  'TRON-USD': 0.085,
+  'TRON-EUR': 0.078,
+  'TRON-PLN': 0.34,
+  'TRON-UAH': 3.15,
+  'USDT-USD': 1.0,
+  'USDT-EUR': 0.92,
+  'USDT-PLN': 4.0,
+  'USDT-UAH': 37.0,
+  'SOL-USD': 98.5,
+  'SOL-EUR': 90.6,
+  'SOL-PLN': 393.4,
+  'SOL-UAH': 3645.5,
+  'BTC-USD': 43250,
+  'BTC-EUR': 39790,
+  'BTC-PLN': 172800,
+  'BTC-UAH': 1600000,
+  'ETH-USD': 2650,
+  'ETH-EUR': 2438,
+  'ETH-PLN': 10585,
+  'ETH-UAH': 98000,
+  'USDC-USD': 1.0,
+  'USDC-EUR': 0.92,
+  'USDC-PLN': 4.0,
+  'USDC-UAH': 37.0
 };
 
 // Конфигурация для CoinGecko API
@@ -109,11 +134,13 @@ async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promi
     return cachedRate;
   }
 
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
+
+  // Пробуем основной эндпоинт
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), COINGECKO_CONFIG.TIMEOUT);
 
-    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
     const response = await fetch(
       `${API_URL}/coingecko/${cryptoId}/${fiatCurrency}`,
       { signal: controller.signal }
@@ -138,8 +165,53 @@ async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promi
 
     return null;
   } catch (error) {
-    console.error(`Ошибка получения курса ${cryptoId}/${fiatCurrency}:`, error);
-    return null;
+    console.error(`❌ Ошибка основного прокси ${cryptoId}/${fiatCurrency}:`, error);
+    
+    // Пробуем альтернативный эндпоинт
+    try {
+      console.log(`🔄 Пробуем альтернативный прокси для ${cryptoId}/${fiatCurrency}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), COINGECKO_CONFIG.TIMEOUT);
+
+      const response = await fetch(
+        `${API_URL}/coingecko-alt/${cryptoId}/${fiatCurrency}`,
+        { signal: controller.signal }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const rate = result.data[cryptoId]?.[fiatCurrency];
+
+        if (rate && typeof rate === 'number') {
+          ratesStore.cacheRate(cacheKey, rate);
+          return rate;
+        }
+      }
+
+      return null;
+    } catch (altError) {
+      console.error(`❌ Ошибка альтернативного прокси ${cryptoId}/${fiatCurrency}:`, altError);
+      
+      // Используем статические курсы как fallback
+      const staticKey = `${cryptoId.toUpperCase()}-${fiatCurrency.toUpperCase()}`;
+      const staticRate = DEFAULT_RATES[staticKey];
+      
+      if (staticRate) {
+        console.log(`📊 Используем статический курс для ${staticKey}: ${staticRate}`);
+        ratesStore.cacheRate(cacheKey, staticRate);
+        return staticRate;
+      }
+      
+      return null;
+    }
   }
 }
 
