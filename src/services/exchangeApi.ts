@@ -65,6 +65,7 @@ export interface RatesResponse {
 // Создание новой заявки на обмен
 export const createExchangeRequest = async (data: ExchangeRequest): Promise<ExchangeResponse> => {
   try {
+    const referralCode = localStorage.getItem('referralCode') || null;
     const response = await fetch(`${API_URL}/exchange`, {
       method: 'POST',
       headers: {
@@ -75,6 +76,7 @@ export const createExchangeRequest = async (data: ExchangeRequest): Promise<Exch
         toCurrency: data.to,
         fromAmount: data.amount,
         destinationAddress: data.destinationAddress,
+        referralCode
       }),
     });
 

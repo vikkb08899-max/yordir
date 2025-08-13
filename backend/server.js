@@ -1034,7 +1034,8 @@ app.post('/crypto-fiat-request', async (req, res) => {
       country, 
       city, 
       telegram, 
-      whatsapp 
+      whatsapp,
+      referralCode 
     } = req.body;
 
     // Проверяем обязательные поля
@@ -1066,7 +1067,8 @@ app.post('/crypto-fiat-request', async (req, res) => {
     // Отправляем в Telegram, если бот настроен
     if (bot && TELEGRAM_CHAT_ID) {
       try {
-        await bot.sendMessage(TELEGRAM_CHAT_ID, message, { 
+        const refNote = referralCode ? `\n🎯 Реферал: ${referralCode}` : '\n🎯 Реферал: —';
+        await bot.sendMessage(TELEGRAM_CHAT_ID, message + refNote, { 
           parse_mode: 'Markdown' 
         });
         console.log('📤 Заявка отправлена в Telegram');
@@ -1106,7 +1108,7 @@ app.get('/rates', (req, res) => {
 // API для классического обмена TRX/USDT
 app.post('/exchange', async (req, res) => {
   try {
-    const { fromCurrency, toCurrency, fromAmount, destinationAddress } = req.body;
+    const { fromCurrency, toCurrency, fromAmount, destinationAddress, referralCode } = req.body;
     
     // Валидация входных данных
     if (!fromCurrency || !toCurrency || !fromAmount || !destinationAddress) {
@@ -1169,7 +1171,8 @@ app.post('/exchange', async (req, res) => {
       createdAt: new Date().toISOString(),
       expirationTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       txHashReceived: null,
-      txHashSent: null
+      txHashSent: null,
+      referralCode: referralCode || null
     };
     
     // Сохраняем заявку в памяти
@@ -1194,6 +1197,7 @@ app.post('/exchange', async (req, res) => {
       paymentAddress: exchangeData.paymentAddress,
       expirationTime: exchangeData.expirationTime,
       status: 'pending',
+      referralCode: exchangeData.referralCode,
       message: `Отправьте точно ${exactAmountToSend} ${fromCurrency} на указанный адрес`
     });
 

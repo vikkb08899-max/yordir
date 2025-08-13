@@ -117,6 +117,17 @@ function HomePage() {
 }
 
 function App() {
+  React.useEffect(() => {
+    // Сохраняем реферальный код из URL (?ref=XXXX)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      if (ref && ref.trim().length > 0) {
+        localStorage.setItem('referralCode', ref.trim());
+      }
+    } catch {}
+  }, []);
+
   return (
     <LanguageProvider>
       <Router>

@@ -245,7 +245,8 @@ const CryptoFiat: React.FC = () => {
           country: selectedCountry.name,
           city: selectedCity,
           telegram: contactInfo.telegram,
-          whatsapp: contactInfo.whatsapp
+          whatsapp: contactInfo.whatsapp,
+          referralCode: localStorage.getItem('referralCode') || null
         }),
       });
 
