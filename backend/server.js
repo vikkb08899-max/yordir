@@ -155,48 +155,13 @@ let currentExchangeRates = {}; // Прямые курсы пар
 let activeExchanges = new Map(); // requestId -> exchangeData
 
 let currentMargins = {
-  // TRX пары
-  'TRX-USDT': 2, 'USDT-TRX': 3,
+  // Крипто-EUR пары (единственные с автоматическими курсами)
   'TRX-EUR': 5, 'EUR-TRX': 7,
-  'TRX-USD': 5, 'USD-TRX': 7,
-  'TRX-PLN': 5, 'PLN-TRX': 7,
-  'TRX-UAH': 5, 'UAH-TRX': 7,
-  
-  // BTC пары
-  'BTC-USDT': 2, 'USDT-BTC': 3,
   'BTC-EUR': 2, 'EUR-BTC': 3,
-  'BTC-USD': 2, 'USD-BTC': 3,
-  'BTC-PLN': 2, 'PLN-BTC': 3,
-  'BTC-UAH': 2, 'UAH-BTC': 3,
-  
-  // ETH пары
-  'ETH-USDT': 2, 'USDT-ETH': 3,
   'ETH-EUR': 2, 'EUR-ETH': 3,
-  'ETH-USD': 2, 'USD-ETH': 3,
-  'ETH-PLN': 2, 'PLN-ETH': 3,
-  'ETH-UAH': 2, 'UAH-ETH': 3,
-  
-  // SOL пары
-  'SOL-USDT': 2, 'USDT-SOL': 3,
   'SOL-EUR': 2, 'EUR-SOL': 3,
-  'SOL-USD': 2, 'USD-SOL': 3,
-  'SOL-PLN': 2, 'PLN-SOL': 3,
-  'SOL-UAH': 2, 'UAH-SOL': 3,
-  
-  // USDC пары
-  'USDC-USDT': 3, 'USDT-USDC': 3,
   'USDC-EUR': 3, 'EUR-USDC': 5,
-  'USDC-USD': 3, 'USD-USDC': 3,
-  'USDC-PLN': 3, 'PLN-USDC': 5,
-  'USDC-UAH': 3, 'UAH-USDC': 5,
-  
-  // Фиатные пары
-  'EUR-USD': 3, 'USD-EUR': 3,
-  'EUR-PLN': 3, 'PLN-EUR': 3,
-  'EUR-UAH': 3, 'UAH-EUR': 3,
-  'USD-PLN': 3, 'PLN-USD': 3,
-  'USD-UAH': 3, 'UAH-USD': 3,
-  'PLN-UAH': 3, 'UAH-PLN': 3
+  'USDT-EUR': 3, 'EUR-USDT': 5
 };
 
 let lastRatesUpdate = null;
@@ -321,17 +286,10 @@ async function updateBinanceRates() {
           console.log(`   TRX/USDT: ${currentExchangeRates['TRX-USDT']?.toFixed(6) || 'N/A'}`);
           console.log(`   SOL/USDT: ${currentExchangeRates['SOL-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   EUR/USDT: ${currentExchangeRates['EUR-USDT']?.toFixed(4) || 'N/A'}`);
-          console.log(`   USD/USDT: ${currentExchangeRates['USD-USDT']?.toFixed(4) || 'N/A'}`);
-          console.log(`   PLN/USDT: ${currentExchangeRates['PLN-USDT']?.toFixed(4) || 'N/A'}`);
-          console.log(`   UAH/USDT: ${currentExchangeRates['UAH-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   BTC/EUR: ${currentExchangeRates['BTC-EUR']?.toFixed(2) || 'N/A'}`);
           console.log(`   SOL/EUR: ${currentExchangeRates['SOL-EUR']?.toFixed(2) || 'N/A'}`);
-          console.log(`   BTC/USD: ${currentExchangeRates['BTC-USD']?.toFixed(2) || 'N/A'}`);
-          console.log(`   SOL/USD: ${currentExchangeRates['SOL-USD']?.toFixed(2) || 'N/A'}`);
-          console.log(`   BTC/PLN: ${currentExchangeRates['BTC-PLN']?.toFixed(2) || 'N/A'}`);
-          console.log(`   SOL/PLN: ${currentExchangeRates['SOL-PLN']?.toFixed(2) || 'N/A'}`);
-          console.log(`   BTC/UAH: ${currentExchangeRates['BTC-UAH']?.toFixed(2) || 'N/A'}`);
-          console.log(`   SOL/UAH: ${currentExchangeRates['SOL-UAH']?.toFixed(2) || 'N/A'}`);
+          console.log(`   ETH/EUR: ${currentExchangeRates['ETH-EUR']?.toFixed(2) || 'N/A'}`);
+          console.log(`   TRX/EUR: ${currentExchangeRates['TRX-EUR']?.toFixed(6) || 'N/A'}`);
           
           resolve();
 
@@ -607,33 +565,21 @@ async function updateCurrencyAPI() {
   });
 }
 
-// Функция для вычисления всех кросс-курсов
+// Функция для вычисления только крипто-EUR курсов
 function calculateCrossRates() {
-  console.log('🔄 Вычисляем кросс-курсы...');
+  console.log('🔄 Вычисляем крипто-EUR курсы...');
   
   const cryptos = ['TRX', 'BTC', 'ETH', 'USDC', 'SOL'];
-  const fiats = ['EUR', 'USD', 'PLN', 'UAH'];
   
-  // Вычисляем курсы криптовалют к фиатным валютам через USD
+  // Вычисляем только курсы криптовалют к EUR
   cryptos.forEach(crypto => {
-    fiats.forEach(fiat => {
-      if (crypto !== 'USDT' && fiat !== 'USDT') {
-        // Через USD
-        if (currentExchangeRates[`${crypto}-USDT`] && currentExchangeRates[`USD-${fiat}`]) {
-          currentExchangeRates[`${crypto}-${fiat}`] = currentExchangeRates[`${crypto}-USDT`] * currentExchangeRates[`USD-${fiat}`];
-          currentExchangeRates[`${fiat}-${crypto}`] = 1 / currentExchangeRates[`${crypto}-${fiat}`];
-        }
-        
-        // Через EUR (если USD недоступен)
-        else if (currentExchangeRates[`${crypto}-USDT`] && currentExchangeRates[`EUR-${fiat}`]) {
-          currentExchangeRates[`${crypto}-${fiat}`] = currentExchangeRates[`${crypto}-USDT`] * currentExchangeRates[`EUR-${fiat}`];
-          currentExchangeRates[`${fiat}-${crypto}`] = 1 / currentExchangeRates[`${crypto}-${fiat}`];
-        }
-      }
-    });
+    if (currentExchangeRates[`${crypto}-USDT`] && currentExchangeRates['EUR-USDT']) {
+      currentExchangeRates[`${crypto}-EUR`] = currentExchangeRates[`${crypto}-USDT`] / currentExchangeRates['EUR-USDT'];
+      currentExchangeRates[`EUR-${crypto}`] = currentExchangeRates['EUR-USDT'] / currentExchangeRates[`${crypto}-USDT`];
+    }
   });
   
-  console.log('✅ Кросс-курсы вычислены');
+  console.log('✅ Крипто-EUR курсы вычислены');
 }
 
 // Основная функция для обновления курсов

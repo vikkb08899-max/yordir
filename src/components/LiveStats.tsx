@@ -107,7 +107,7 @@ const LiveStats: React.FC = () => {
   };
 
   return (
-    <div id="stats" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-4 md:p-6">
+          <div id="stats" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-6">
       <div className="flex items-center space-x-3 mb-4 md:mb-6">
         <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
           <Activity className="w-4 h-4 md:w-5 md:h-5 text-red-400" />

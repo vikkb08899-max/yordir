@@ -132,6 +132,14 @@ const CryptoFiat: React.FC = () => {
       return;
     }
 
+    // Если выбранная фиатная валюта не EUR, показываем "курс уточняйте у менеджера"
+    if (selectedFiat?.symbol !== 'EUR') {
+      setCalculatedAmount('Курс уточняйте у менеджера');
+      setExchangeRate(0);
+      setMargin(0);
+      return;
+    }
+
     try {
       const fromSymbol = exchangeType === 'crypto-to-fiat' ? selectedCrypto.symbol : selectedFiat.symbol;
       const toSymbol = exchangeType === 'crypto-to-fiat' ? selectedFiat.symbol : selectedCrypto.symbol;
@@ -387,6 +395,9 @@ const CryptoFiat: React.FC = () => {
                   >
                     <span className="text-lg">{fiat.icon}</span>
                     <span>{fiat.symbol}</span>
+                    {fiat.symbol !== 'EUR' && (
+                      <span className="text-xs text-yellow-400 ml-auto">Курс уточняйте</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -410,6 +421,9 @@ const CryptoFiat: React.FC = () => {
                   >
                     <span className="text-lg">{fiat.icon}</span>
                     <span>{fiat.symbol}</span>
+                    {fiat.symbol !== 'EUR' && (
+                      <span className="text-xs text-yellow-400 ml-auto">Курс уточняйте</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -464,16 +478,16 @@ const CryptoFiat: React.FC = () => {
               <span className="text-gray-400 text-sm">
                 {exchangeType === 'crypto-to-fiat' ? 'Вы получите' : 'Вам потребуется'}
               </span>
-              {margin > 0 && (
+              {margin > 0 && selectedFiat?.symbol === 'EUR' && (
                 <span className="text-red-400 text-xs bg-red-400/10 px-2 py-1 rounded-full">
                   Наценка: {margin}%
                 </span>
               )}
             </div>
-            <div className="text-2xl font-bold text-green-400">
-              {calculatedAmount} {exchangeType === 'crypto-to-fiat' ? selectedFiat?.symbol : selectedCrypto?.symbol}
+            <div className={`text-2xl font-bold ${selectedFiat?.symbol === 'EUR' ? 'text-green-400' : 'text-yellow-400'}`}>
+              {calculatedAmount} {selectedFiat?.symbol !== 'EUR' ? '' : (exchangeType === 'crypto-to-fiat' ? selectedFiat?.symbol : selectedCrypto?.symbol)}
             </div>
-            {exchangeRate > 0 && (
+            {exchangeRate > 0 && selectedFiat?.symbol === 'EUR' && (
               <div className="text-xs text-gray-500 mt-1">
                 Курс: 1 {exchangeType === 'crypto-to-fiat' ? selectedCrypto?.symbol : selectedFiat?.symbol} = {exchangeRate.toFixed(6)} {exchangeType === 'crypto-to-fiat' ? selectedFiat?.symbol : selectedCrypto?.symbol}
               </div>
