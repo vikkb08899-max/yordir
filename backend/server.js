@@ -1298,7 +1298,7 @@ app.get('/exchange/:requestId/status', async (req, res) => {
 // Прокси: SimpleSwap — список валют
 app.get('/simpleswap/currencies', async (req, res) => {
   try {
-    const url = `${SIMPLESWAP_BASE}/v2/get_all_currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_all_currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1316,7 +1316,7 @@ app.get('/simpleswap/currencies', async (req, res) => {
 // Дублирующий маршрут с префиксом /api
 app.get('/api/simpleswap/currencies', async (req, res) => {
   try {
-    const url = `${SIMPLESWAP_BASE}/v2/get_all_currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_all_currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1337,7 +1337,7 @@ app.get('/simpleswap/min', async (req, res) => {
     if (!from || !to) {
       return res.status(400).json({ success: false, error: 'from и to обязательны' });
     }
-    const url = `${SIMPLESWAP_BASE}/v2/get_min?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_min?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1358,7 +1358,7 @@ app.get('/api/simpleswap/min', async (req, res) => {
     if (!from || !to) {
       return res.status(400).json({ success: false, error: 'from и to обязательны' });
     }
-    const url = `${SIMPLESWAP_BASE}/v2/get_min?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_min?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1378,7 +1378,7 @@ app.get('/simpleswap/estimate', async (req, res) => {
     if (!from || !to || !amount) {
       return res.status(400).json({ success: false, error: 'from, to, amount обязательны' });
     }
-    const url = `${SIMPLESWAP_BASE}/v2/get_estimated?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_estimated?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1399,7 +1399,7 @@ app.get('/api/simpleswap/estimate', async (req, res) => {
     if (!from || !to || !amount) {
       return res.status(400).json({ success: false, error: 'from, to, amount обязательны' });
     }
-    const url = `${SIMPLESWAP_BASE}/v2/get_estimated?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_estimated?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1446,7 +1446,7 @@ app.post('/simpleswap/create', async (req, res) => {
       user_referral: user_referral || undefined
     };
 
-    const response = await fetch(`${SIMPLESWAP_BASE}/v2/create_exchange`, {
+    const response = await fetch(`${SIMPLESWAP_BASE}/create_exchange`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1499,7 +1499,7 @@ app.post('/api/simpleswap/create', async (req, res) => {
       user_referral: user_referral || undefined
     };
 
-    const response = await fetch(`${SIMPLESWAP_BASE}/v2/create_exchange`, {
+    const response = await fetch(`${SIMPLESWAP_BASE}/create_exchange`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1523,7 +1523,7 @@ app.get('/simpleswap/status/:id', async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'id обязателен' });
 
-    const url = `${SIMPLESWAP_BASE}/v2/get_exchange?exchange_id=${encodeURIComponent(id)}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_exchange?exchange_id=${encodeURIComponent(id)}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1543,7 +1543,7 @@ app.get('/api/simpleswap/status/:id', async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'id обязателен' });
 
-    const url = `${SIMPLESWAP_BASE}/v2/get_exchange?exchange_id=${encodeURIComponent(id)}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_exchange?exchange_id=${encodeURIComponent(id)}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
