@@ -63,7 +63,7 @@ const CRYPTO_IDS = {
   USDC: 'usd-coin'
 };
 
-// Маппинг криптовалют к Coinpaprika ID
+// Маппинг криптовалют к Coinpaprika ID (tickers)
 const COINPAPRIKA_IDS = {
   TRX: 'trx-tron',
   USDT: 'usdt-tether',
@@ -134,24 +134,15 @@ const ratesStore = {
 // Функция для задержки
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Функция для получения курса с Coinpaprika через наш прокси
-async function fetchCoinpaprikaRate(cryptoId: string, fiatCurrency: string): Promise<number | null> {
-  const cacheKey = `${cryptoId}-${fiatCurrency}-paprika`;
-  
-  // Проверяем кэш
-  const cachedRate = ratesStore.getCachedRate(cacheKey);
-  if (cachedRate !== null) {
-    return cachedRate;
-  }
-
+// Функция для получения сразу нескольких котировок через Coinpaprika прокси
+async function fetchCoinpaprikaQuotes(tickerId: string, fiats: string[]): Promise<Record<string, number> | null> {
   const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), COINGECKO_CONFIG.TIMEOUT);
 
     const response = await fetch(
-      `${API_URL}/coinpaprika/${cryptoId}/${fiatCurrency}`,
+      `${API_URL}/coinpaprika/${tickerId}?quotes=${fiats.map(f=>f.toUpperCase()).join(',')}`,
       { signal: controller.signal }
     );
 
@@ -162,21 +153,27 @@ async function fetchCoinpaprikaRate(cryptoId: string, fiatCurrency: string): Pro
     }
 
     const result = await response.json();
-    
-    if (result.success && result.data && result.data.price) {
-      const rate = result.data.price;
-
-      if (rate && typeof rate === 'number') {
-        ratesStore.cacheRate(cacheKey, rate);
-        return rate;
+    if (result.success && result.data && result.data.quotes) {
+      const out: Record<string, number> = {};
+      for (const fiat of fiats) {
+        const q = result.data.quotes[fiat.toUpperCase()];
+        if (q && typeof q.price === 'number') {
+          out[fiat.toUpperCase()] = q.price;
+        }
       }
+      return out;
     }
-
     return null;
   } catch (error) {
-    console.error(`❌ Ошибка получения курса Coinpaprika ${cryptoId}/${fiatCurrency}:`, error);
+    console.error(`❌ Ошибка Coinpaprika quotes ${tickerId}:`, error);
     return null;
   }
+}
+
+// Функция для получения курса с Coinpaprika через наш прокси (один фиат — для совместимости)
+async function fetchCoinpaprikaRate(cryptoId: string, fiatCurrency: string): Promise<number | null> {
+  const quotes = await fetchCoinpaprikaQuotes(cryptoId, [fiatCurrency]);
+  return quotes ? quotes[fiatCurrency.toUpperCase()] ?? null : null;
 }
 
 // Функция для получения курса с CoinGecko через наш прокси
@@ -270,34 +267,34 @@ async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promi
   }
 }
 
-// Функция для получения курсов батчами
+// Функция для получения курсов батчами (оптимизировано: Coinpaprika одним запросом на монету)
 async function fetchRatesBatch(cryptoIds: string[], fiatCurrencies: string[]): Promise<Map<string, number>> {
   const rates = new Map<string, number>();
 
   for (const cryptoId of cryptoIds) {
-    for (const fiatCurrency of fiatCurrencies) {
-      // Определяем, какой API использовать по формату ID
-      const isCoinpaprikaId = cryptoId.includes('-');
-      
-      if (isCoinpaprikaId) {
-        // Используем Coinpaprika
-        const rate = await fetchCoinpaprikaRate(cryptoId, fiatCurrency);
-        if (rate !== null) {
-          // Преобразуем ID обратно в стандартный формат
-          const standardId = cryptoId.split('-')[0]; // берем первую часть (trx, usdt, etc.)
-          rates.set(`${standardId}-${fiatCurrency}`, rate);
-        }
-      } else {
-        // Используем CoinGecko
-        const rate = await fetchCoinGeckoRate(cryptoId, fiatCurrency);
-        if (rate !== null) {
-          rates.set(`${cryptoId}-${fiatCurrency}`, rate);
+    const isCoinpaprikaId = cryptoId.includes('-');
+
+    if (isCoinpaprikaId) {
+      const quotes = await fetchCoinpaprikaQuotes(cryptoId, fiatCurrencies);
+      if (quotes) {
+        const standardId = cryptoId.split('-')[0].toUpperCase();
+        for (const fiat of Object.keys(quotes)) {
+          rates.set(`${standardId}-${fiat}`, quotes[fiat]!);
         }
       }
-      
-      // Задержка между запросами
-      await delay(COINGECKO_CONFIG.REQUEST_DELAY);
+    } else {
+      // Fallback: по одному фиату через CoinGecko
+      for (const fiatCurrency of fiatCurrencies) {
+        const rate = await fetchCoinGeckoRate(cryptoId, fiatCurrency);
+        if (rate !== null) {
+          rates.set(`${cryptoId.toUpperCase()}-${fiatCurrency.toUpperCase()}`, rate);
+        }
+        await delay(COINGECKO_CONFIG.REQUEST_DELAY);
+      }
     }
+
+    // Пауза между монетами
+    await delay(COINGECKO_CONFIG.REQUEST_DELAY);
   }
 
   return rates;
@@ -447,11 +444,11 @@ export function useExchangeRates() {
     return unsubscribe;
   }, []);
 
-  // Запускаем обновление курсов каждые 15 минут
+  // Запускаем обновление курсов каждые 15 минут (чтение с сервера)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchExchangeRates();
-    }, COINGECKO_CONFIG.UPDATE_INTERVAL);
+    }, 15 * 60 * 1000);
     
     return () => clearInterval(interval);
   }, []);

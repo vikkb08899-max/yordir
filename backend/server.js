@@ -888,53 +888,50 @@ app.get('/coingecko-alt/:cryptoId/:fiatCurrency', (req, res) => {
   });
 });
 
-// Прокси для Coinpaprika API
-app.get('/coinpaprika/:cryptoId/:fiatCurrency', async (req, res) => {
+// Прокси для Coinpaprika API (bulk quotes)
+app.get('/coinpaprika/:cryptoId', async (req, res) => {
   try {
-    const { cryptoId, fiatCurrency } = req.params;
-    
-    console.log(`🔄 Проксирование Coinpaprika: ${cryptoId}/${fiatCurrency}`);
-    
-    const url = `https://api.coinpaprika.com/v1/tickers/${cryptoId}/quotes/${fiatCurrency.toUpperCase()}`;
+    const { cryptoId } = req.params;
+    const quotesParam = (req.query.quotes || 'USD').toString().toUpperCase();
+
+    console.log(`🔄 Проксирование Coinpaprika: ${cryptoId} quotes=${quotesParam}`);
+
+    const url = `https://api.coinpaprika.com/v1/tickers/${cryptoId}?quotes=${encodeURIComponent(quotesParam)}`;
     console.log(`📡 URL: ${url}`);
-    
-    // Проверяем доступность fetch
+
     if (typeof fetch !== 'function') {
       throw new Error('fetch недоступен на сервере');
     }
-    
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'CryptoXchange/1.0',
         'Accept': 'application/json'
       }
     });
-    
+
     console.log(`📊 Статус ответа: ${response.status} ${response.statusText}`);
-    
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ Ошибка парсинга ответа Coinpaprika:', text);
+      throw new Error('Invalid JSON from Coinpaprika');
+    }
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Coinpaprika API error: ${response.status} ${response.statusText}`, errorText);
+      console.error(`❌ Coinpaprika API error: ${response.status} ${response.statusText}`, data);
       throw new Error(`Coinpaprika API error: ${response.status} ${response.statusText}`);
     }
-    
-    const data = await response.json();
-    console.log(`✅ Получены данные:`, data);
-    
-    res.json({
-      success: true,
-      data: data,
-      timestamp: new Date().toISOString()
-    });
-    
+
+    console.log('✅ Получены данные Coinpaprika');
+    res.json({ success: true, data, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('❌ Ошибка проксирования Coinpaprika API:', error.message);
     console.error('❌ Stack trace:', error.stack);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      details: error.stack
-    });
+    res.status(500).json({ success: false, error: error.message, details: error.stack });
   }
 });
 
@@ -1282,8 +1279,8 @@ async function initializeServer() {
     console.log(`🚀 Сервер запущен на порту ${PORT}`);
   });
   
-  // Обновляем курсы каждую минуту
-  setInterval(updateExchangeRates, 60000);
+  // Обновляем курсы каждые 15 минут
+  setInterval(updateExchangeRates, 15 * 60 * 1000);
   
   // Мониторим входящие транзакции каждые 30 секунд
   setInterval(monitorIncomingTransactions, 30000);
