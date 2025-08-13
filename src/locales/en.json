@@ -1,0 +1,115 @@
+{
+  "header": {
+    "title": "CryptoXchange",
+    "tagline": "Global Cryptocurrency Exchange"
+  },
+  "hero": {
+    "title": "Global Crypto Exchange",
+    "subtitle": "Trusted Worldwide",
+    "description": "Professional cryptocurrency exchange operating in major cities worldwide. Instant crypto-to-crypto, crypto-to-fiat, and fiat-to-crypto exchanges with competitive rates and 24/7 support."
+  },
+  "features": {
+    "globalCoverage": {
+      "title": "Global Coverage",
+      "description": "Operating in major cities worldwide with local payment methods and support"
+    },
+    "instantExchange": {
+      "title": "Instant Exchange",
+      "description": "Lightning-fast crypto exchanges with real-time rates and minimal fees"
+    },
+    "bankGradeSecurity": {
+      "title": "Bank-Grade Security",
+      "description": "99.9% uptime, cold storage, and 24/7 monitoring for maximum security"
+    },
+    "smartTrading": {
+      "title": "Smart Trading",
+      "description": "Advanced algorithms for optimal rates and automated portfolio management"
+    }
+  },
+  "exchange": {
+    "title": "Exchange",
+    "subtitle": "Instant crypto trading",
+    "from": "From",
+    "to": "To",
+    "recipientAddress": "Your TRC20 Address",
+    "startExchange": "Start Exchange",
+    "exchangeStarted": "Exchange Started!",
+    "paymentDetails": "Payment Details",
+    "walletAddress": "Wallet Address",
+    "amountToSend": "Amount to Send",
+    "receivingAmount": "Receiving Amount",
+    "expirationTime": "Expiration Time",
+    "sendPayment": "Send Payment",
+    "checkStatus": "Check Status",
+    "exchangeCompleted": "Exchange Completed!",
+    "transactionHash": "Transaction Hash",
+    "newExchange": "New Exchange"
+  },
+  "cryptoFiat": {
+    "title": "Crypto ⇄ Fiat",
+    "subtitle": "Cryptocurrency to cash exchange",
+    "exchangeType": "Exchange Type",
+    "cryptoToFiat": "Crypto → Fiat",
+    "fiatToCrypto": "Fiat → Crypto",
+    "country": "Country",
+    "selectCountry": "Select country",
+    "city": "City",
+    "selectCity": "Select city",
+    "cryptoCurrency": "Cryptocurrency",
+    "fiatCurrency": "Fiat Currency",
+    "amount": "Amount",
+    "youWillReceive": "You will receive",
+    "youWillNeed": "You will need",
+    "margin": "Margin",
+    "rate": "Rate",
+    "contactInfo": "Contact information (provide at least one)",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "preferredContact": "Preferred contact method",
+    "howItWorks": "How it works",
+    "howItWorksDescription": "After submitting your request, our operator will contact you to coordinate exchange details. We only work in specified cities and guarantee transaction security.",
+    "submitRequest": "Submit Request",
+    "sending": "Sending...",
+    "requestSubmitted": "Request Submitted!",
+    "requestSubmittedDescription": "Your exchange request has been received. We will contact you shortly through the provided contact method.",
+    "createNewRequest": "Create New Request"
+  },
+  "tradingChart": {
+    "title": "Trading Chart",
+    "subtitle": "Real-time market analysis"
+  },
+  "liveStats": {
+    "title": "Live Statistics",
+    "subtitle": "Recent transactions and activity",
+    "recentTransactions": "Recent Transactions",
+    "activeUsers": "Active Users",
+    "totalVolume": "Total Volume",
+    "exchangeRate": "Exchange Rate"
+  },
+  "footer": {
+    "services": "Services",
+    "exchange": "Exchange",
+    "trading": "Trading",
+    "analytics": "Analytics",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms & Conditions",
+    "copyright": "© 2024 CryptoXchange. All rights reserved."
+  },
+  "countries": {
+    "DE": "Germany",
+    "FR": "France",
+    "IT": "Italy",
+    "ES": "Spain",
+    "PL": "Poland",
+    "UA": "Ukraine"
+  },
+  "cities": {
+    "DE": ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Düsseldorf", "Stuttgart", "Dortmund", "Essen", "Leipzig"],
+    "FR": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Strasbourg", "Montpellier", "Bordeaux", "Lille", "Nantes"],
+    "IT": ["Rome", "Milan", "Naples", "Turin", "Florence", "Venice", "Palermo", "Genoa", "Bologna", "Bari"],
+    "ES": ["Madrid", "Barcelona", "Valencia", "Seville", "Bilbao", "Malaga", "Zaragoza", "Murcia", "Palma", "Las Palmas"],
+    "PL": ["Warsaw", "Krakow", "Lodz", "Wroclaw", "Poznan", "Gdansk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice"],
+    "UA": ["Kyiv", "Kharkiv", "Odessa", "Dnipro", "Donetsk", "Zaporizhzhia", "Lviv", "Kryvyi Rih", "Mykolaiv", "Mariupol"]
+  }
+} 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpDown, Wallet, TrendingUp, Clock, CheckCircle, ExternalLink, QrCode } from 'lucide-react';
 import { createExchangeRequest, checkExchangeStatus, Currency } from '../services/exchangeApi';
 import { useExchangeRates, checkUsdtTransactions } from '../services/ratesService';
+import { useLanguage } from '../contexts/LanguageContext';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -13,6 +14,7 @@ import ethIcon from '/icons8-ethereum-512.png';
 import QRCode from 'qrcode';
 
 const ExchangeInterface: React.FC = () => {
+  const { t } = useLanguage();
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState<Currency>('TRX');
@@ -394,8 +396,8 @@ const ExchangeInterface: React.FC = () => {
           <ArrowUpDown className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
         </div>
         <div>
-          <h3 className="text-lg md:text-xl font-bold text-white">Exchange</h3>
-          <p className="text-gray-400 text-xs md:text-sm">Instant crypto trading</p>
+          <h3 className="text-lg md:text-xl font-bold text-white">{t('exchange.title')}</h3>
+          <p className="text-gray-400 text-xs md:text-sm">{t('exchange.subtitle')}</p>
         </div>
       </div>
       
@@ -442,13 +444,13 @@ const ExchangeInterface: React.FC = () => {
       ) : !exchangeStarted ? (
         <div className="space-y-4">
           {/* From Currency */}
-          <div className="bg-gray-800/50 rounded-xl p-4">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-gray-400 text-sm">From</label>
+              <label className="text-gray-400 text-sm">{t('exchange.from')}</label>
               <span className="text-gray-400 text-sm">{fromCurrency}</span>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 bg-gray-700/50 rounded-lg px-3 py-2">
+              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
                 <img 
                   src={getCurrencyIcon(fromCurrency)} 
                   alt={fromCurrency}
@@ -456,13 +458,15 @@ const ExchangeInterface: React.FC = () => {
                 />
                 <span className="text-white font-medium">{fromCurrency}</span>
               </div>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={fromAmount}
-                onChange={(e) => handleFromAmountChange(e.target.value)}
-                className="flex-1 bg-transparent text-white text-xl font-bold placeholder-gray-500 focus:outline-none"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={fromAmount}
+                  onChange={(e) => handleFromAmountChange(e.target.value)}
+                  className="w-full bg-transparent text-white text-xl font-bold placeholder-gray-500 focus:outline-none text-right pr-2"
+                />
+              </div>
             </div>
           </div>
 
@@ -477,13 +481,13 @@ const ExchangeInterface: React.FC = () => {
           </div>
 
           {/* To Currency */}
-          <div className="bg-gray-800/50 rounded-xl p-4">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-gray-400 text-sm">To</label>
+              <label className="text-gray-400 text-sm">{t('exchange.to')}</label>
               <span className="text-gray-400 text-sm">{toCurrency}</span>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 bg-gray-700/50 rounded-lg px-3 py-2">
+              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
                 <img 
                   src={getCurrencyIcon(toCurrency)} 
                   alt={toCurrency}
@@ -491,24 +495,26 @@ const ExchangeInterface: React.FC = () => {
                 />
                 <span className="text-white font-medium">{toCurrency}</span>
               </div>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={toAmount}
-                readOnly
-                className="flex-1 bg-transparent text-white text-xl font-bold placeholder-gray-500 focus:outline-none"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={toAmount}
+                  readOnly
+                  className="w-full bg-transparent text-white text-xl font-bold placeholder-gray-500 focus:outline-none text-right pr-2"
+                />
+              </div>
             </div>
           </div>
           
           {/* Recipient Address Field */}
-          <div className="bg-gray-800/50 rounded-xl p-4">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <div className="mb-3">
-              <label className="text-gray-400 text-sm">Адрес получателя</label>
+              <label className="text-gray-400 text-sm">{t('exchange.recipientAddress')}</label>
             </div>
             <input
               type="text"
-              placeholder="TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"
+              placeholder={t('exchange.recipientAddress')}
               value={destinationAddress}
               onChange={(e) => setDestinationAddress(e.target.value)}
               className="w-full bg-transparent text-white font-medium placeholder-gray-500 focus:outline-none"
@@ -517,7 +523,7 @@ const ExchangeInterface: React.FC = () => {
 
           {/* Exchange Rate */}
           <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
-            <span className="text-gray-400 text-sm">Exchange Rate</span>
+            <span className="text-gray-400 text-sm">{t('liveStats.exchangeRate')}</span>
             <div className="flex items-center">
               <span className="text-white font-medium mr-1">1</span>
               <img src={getCurrencyIcon(fromCurrency)} alt={fromCurrency} className="w-4 h-4 mr-1" />
@@ -573,7 +579,7 @@ const ExchangeInterface: React.FC = () => {
             ) : (
               <>
                 <Wallet className="w-5 h-5" />
-                <span>Start Exchange</span>
+                <span>{t('exchange.startExchange')}</span>
               </>
             )}
           </button>

@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsConditions from './components/TermsConditions';
 import { TrendingUp, Zap, Shield, RefreshCw } from 'lucide-react';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 function HomePage() {
   return (
@@ -96,8 +97,9 @@ function HomePage() {
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
+    <LanguageProvider>
+      <Router>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
         {/* Динамический фон */}
         <div className="absolute inset-0">
           {/* Анимированные градиенты */}
@@ -132,7 +134,8 @@ function App() {
         <Footer />
       </div>
       </div>
-    </Router>
+      </Router>
+    </LanguageProvider>
   );
 }
 
