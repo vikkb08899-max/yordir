@@ -575,7 +575,7 @@ const ExchangeInterface: React.FC = () => {
             } flex items-center justify-center space-x-2`}
           >
             {loading ? (
-              <span>Обработка...</span>
+                              <span>{t('exchange.processing')}</span>
             ) : (
               <>
                 <Wallet className="w-5 h-5" />

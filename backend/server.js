@@ -37,6 +37,12 @@ if (TELEGRAM_BOT_TOKEN) {
     }
   });
   
+  // Простая команда для тестирования
+  bot.onText(/\/test/, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, '🤖 Бот работает! Команда /test получена.');
+  });
+  
   // Команда для показа всех наценок
   bot.onText(/\/rates/, (msg) => {
     const chatId = msg.chat.id;
@@ -192,8 +198,11 @@ if (TELEGRAM_BOT_TOKEN) {
   });
   
   console.log('✅ Telegram бот инициализирован');
+  console.log('🤖 Токен бота:', TELEGRAM_BOT_TOKEN ? 'Настроен' : 'Не настроен');
+  console.log('📱 Chat ID:', TELEGRAM_CHAT_ID ? 'Настроен' : 'Не настроен');
 } else {
   console.log('⚠️  Telegram бот не настроен (отсутствует TELEGRAM_BOT_TOKEN)');
+  console.log('🔧 Для настройки бота добавьте TELEGRAM_BOT_TOKEN в .env файл');
 }
 
 // Конфигурация TronWeb (подключаемся к мейннету Tron)

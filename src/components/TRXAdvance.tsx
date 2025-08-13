@@ -237,15 +237,15 @@ const CryptoFiat: React.FC = () => {
       <div id="crypto-fiat" className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 h-full">
         <div className="text-center">
           <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-white mb-2">Заявка отправлена!</h3>
+                        <h3 className="text-2xl font-bold text-white mb-2">{t('cryptoFiat.requestSubmitted')}</h3>
           <p className="text-gray-300 mb-6">
             Ваша заявка на обмен {exchangeType === 'crypto-to-fiat' ? 'криптовалюты на наличные' : 'наличных на криптовалюту'} 
             получена. Мы свяжемся с вами в ближайшее время через указанный контакт.
           </p>
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 mb-6">
             <div className="text-sm text-gray-400 space-y-1">
-              <div>Страна: <span className="text-white">{selectedCountry?.name}</span></div>
-              <div>Город: <span className="text-white">{selectedCity}</span></div>
+                              <div>{t('cryptoFiat.country')}: <span className="text-white">{selectedCountry?.name}</span></div>
+                <div>{t('cryptoFiat.city')}: <span className="text-white">{selectedCity}</span></div>
               <div>
                 {exchangeType === 'crypto-to-fiat' ? 'Отдаете' : 'Получаете'}: 
                 <span className="text-white ml-1">{amount} {selectedCrypto?.symbol}</span>
@@ -275,14 +275,14 @@ const CryptoFiat: React.FC = () => {
         </div>
         <div>
           <h3 className="text-xl font-bold text-white">Crypto ⇄ Fiat</h3>
-          <p className="text-gray-400 text-sm">Обмен криптовалют на наличные</p>
+          <p className="text-gray-400 text-sm">{t('cryptoFiat.subtitle')}</p>
         </div>
       </div>
 
       <div className="space-y-6">
         {/* Тип обмена */}
         <div>
-          <label className="block text-gray-400 text-sm mb-3">Тип обмена</label>
+                      <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.exchangeType')}</label>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setExchangeType('crypto-to-fiat')}
@@ -309,7 +309,7 @@ const CryptoFiat: React.FC = () => {
 
         {/* Выбор страны */}
         <div>
-          <label className="block text-gray-400 text-sm mb-3">Страна</label>
+                      <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.country')}</label>
           <select
             value={selectedCountry?.code || ''}
             onChange={(e) => {
@@ -319,7 +319,7 @@ const CryptoFiat: React.FC = () => {
             }}
             className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
           >
-            <option value="">Выберите страну</option>
+                          <option value="">{t('cryptoFiat.selectCountry')}</option>
             {countries.map((country) => (
               <option key={country.code} value={country.code} className="bg-gray-800 text-white">
                 {country.flag} {country.name}
@@ -331,13 +331,13 @@ const CryptoFiat: React.FC = () => {
         {/* Выбор города */}
         {selectedCountry && (
           <div>
-            <label className="block text-gray-400 text-sm mb-3">Город</label>
+            <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.city')}</label>
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
               className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
             >
-              <option value="">Выберите город</option>
+              <option value="">{t('cryptoFiat.selectCity')}</option>
               {selectedCountry.cities.map((city) => (
                 <option key={city} value={city}>{city}</option>
               ))}
@@ -350,7 +350,7 @@ const CryptoFiat: React.FC = () => {
           <>
             {/* Выбор криптовалюты (отдаете) */}
             <div>
-              <label className="block text-gray-400 text-sm mb-3">Криптовалюта (отдаете)</label>
+              <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.cryptoCurrency')} ({t('exchange.from')})</label>
               <div className="grid grid-cols-2 gap-2">
                 {cryptoOptions.map((crypto) => (
                   <button
@@ -371,7 +371,7 @@ const CryptoFiat: React.FC = () => {
 
             {/* Выбор фиатной валюты (получаете) */}
             <div>
-              <label className="block text-gray-400 text-sm mb-3">Фиатная валюта (получаете)</label>
+              <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.fiatCurrency')} ({t('exchange.to')})</label>
               <div className="grid grid-cols-1 gap-2">
                 {fiatOptions.map((fiat) => (
                   <button
@@ -394,7 +394,7 @@ const CryptoFiat: React.FC = () => {
           <>
             {/* Выбор фиатной валюты (отдаете) */}
             <div>
-              <label className="block text-gray-400 text-sm mb-3">Фиатная валюта (отдаете)</label>
+              <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.fiatCurrency')} ({t('exchange.from')})</label>
               <div className="grid grid-cols-1 gap-2">
                 {fiatOptions.map((fiat) => (
                   <button
@@ -415,7 +415,7 @@ const CryptoFiat: React.FC = () => {
 
             {/* Выбор криптовалюты (получаете) */}
             <div>
-              <label className="block text-gray-400 text-sm mb-3">Криптовалюта (получаете)</label>
+              <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.cryptoCurrency')} ({t('exchange.to')})</label>
               <div className="grid grid-cols-2 gap-2">
                 {cryptoOptions.map((crypto) => (
                   <button
@@ -481,7 +481,7 @@ const CryptoFiat: React.FC = () => {
 
         {/* Контактная информация */}
         <div>
-          <label className="block text-gray-400 text-sm mb-3">Контактная информация (укажите хотя бы один)</label>
+                      <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.contactInfo')}</label>
           <div className="space-y-3">
             <div>
               <div className="flex items-center space-x-2 mb-2">
@@ -510,7 +510,7 @@ const CryptoFiat: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-400 text-xs mb-2">Предпочтительный способ связи</label>
+              <label className="block text-gray-400 text-xs mb-2">{t('cryptoFiat.preferredContact')}</label>
               <div className="flex space-x-2">
                 <button
                   onClick={() => setContactInfo({...contactInfo, preferredContact: 'telegram'})}
@@ -542,7 +542,7 @@ const CryptoFiat: React.FC = () => {
           <div className="flex items-start space-x-3">
             <Globe className="w-5 h-5 text-blue-400 mt-0.5" />
             <div>
-              <h5 className="text-blue-400 font-medium text-sm">Как это работает</h5>
+              <h5 className="text-blue-400 font-medium text-sm">{t('cryptoFiat.howItWorks')}</h5>
               <p className="text-gray-300 text-xs mt-1">
                 После отправки заявки наш оператор свяжется с вами для согласования деталей обмена. 
                 Мы работаем только в указанных городах и гарантируем безопасность сделки.
