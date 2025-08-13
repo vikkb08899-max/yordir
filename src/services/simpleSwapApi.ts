@@ -71,6 +71,13 @@ export async function ssGetCurrencies(): Promise<SimpleSwapCurrency[]> {
 	return data.currencies;
 }
 
+export async function ssGetPairs(symbol: string, fixed = false): Promise<string[]> {
+	const resp = await fetch(`${API_URL}/simpleswap/pairs?symbol=${encodeURIComponent(symbol)}&fixed=${fixed ? 'true' : 'false'}`);
+	const data = await parseJsonOrThrow(resp);
+	if (!data.success) throw new Error(data.error || 'Ошибка загрузки пар');
+	return data.pairs as string[];
+}
+
 export async function ssGetMin(from: string, to: string, fixed = false): Promise<number> {
 	const resp = await fetch(`${API_URL}/simpleswap/min?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&fixed=${fixed ? 'true' : 'false'}`);
 	const data = await parseJsonOrThrow(resp);

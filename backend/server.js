@@ -1889,4 +1889,44 @@ async function logExchangeToGoogleSheets(exchangeData) {
   }
 }
 
+app.get('/simpleswap/pairs', async (req, res) => {
+  try {
+    const { symbol, fixed } = req.query;
+    if (!symbol) {
+      return res.status(400).json({ success: false, error: 'symbol обязателен' });
+    }
+    const url = `${SIMPLESWAP_BASE}/get_pairs?symbol=${encodeURIComponent(String(symbol))}&fixed=${fixed === 'true' ? 'false' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, symbol: String(symbol), pairs: Array.isArray(data) ? data : [] });
+  } catch (e) {
+    console.error('❌ SimpleSwap pairs error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+app.get('/api/simpleswap/pairs', async (req, res) => {
+  try {
+    const { symbol, fixed } = req.query;
+    if (!symbol) {
+      return res.status(400).json({ success: false, error: 'symbol обязателен' });
+    }
+    const url = `${SIMPLESWAP_BASE}/get_pairs?symbol=${encodeURIComponent(String(symbol))}&fixed=${fixed === 'true' ? 'false' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, symbol: String(symbol), pairs: Array.isArray(data) ? data : [] });
+  } catch (e) {
+    console.error('❌ SimpleSwap pairs error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 initializeServer().catch(console.error); 

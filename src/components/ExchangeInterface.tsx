@@ -5,6 +5,7 @@ import { useExchangeRates, checkUsdtTransactions } from '../services/ratesServic
 import { useLanguage } from '../contexts/LanguageContext';
 import { ssEstimate, ssCreateExchange, ssGetStatus } from '../services/simpleSwapApi';
 import type { SimpleSwapCurrency } from '../services/simpleSwapApi';
+import { ssGetPairs } from '../services/simpleSwapApi';
 
 // Интерфейсы для истории сделок
 interface ExchangeHistoryItem {
@@ -40,8 +41,8 @@ const ExchangeInterface: React.FC = () => {
   const { t } = useLanguage();
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const [fromCurrency, setFromCurrency] = useState<string>('TRX');
-  const [toCurrency, setToCurrency] = useState<string>('USDT');
+  const [fromCurrency, setFromCurrency] = useState<string>('trx');
+  const [toCurrency, setToCurrency] = useState<string>('usdt');
   const [isSwapped, setIsSwapped] = useState(false);
   const [destinationAddress, setDestinationAddress] = useState('');
   const [exchangeStarted, setExchangeStarted] = useState(false);
@@ -66,11 +67,12 @@ const ExchangeInterface: React.FC = () => {
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<ExchangeHistoryItem | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [ssCurrencies, setSsCurrencies] = useState<SimpleSwapCurrency[]>([]);
+  const [availableToForFrom, setAvailableToForFrom] = useState<string[]>([]);
   const availableSymbols = React.useMemo(() => {
-    const base = ['TRX','USDT','BTC','ETH','USDC','SOL'];
+    const base = ['trx','usdt','btc','eth','usdc','sol'];
     const set = new Set<string>(base);
     ssCurrencies.forEach((c) => {
-      if (c && c.symbol) set.add(c.symbol.toUpperCase());
+      if (c && c.symbol) set.add(c.symbol);
     });
     return Array.from(set).sort();
   }, [ssCurrencies]);
@@ -85,6 +87,29 @@ const ExchangeInterface: React.FC = () => {
       }
     });
   }, []);
+
+  // Подгружаем доступные пары назначения при смене fromCurrency
+  useEffect(() => {
+    const loadPairs = async () => {
+      try {
+        const symbol = fromCurrency.toLowerCase();
+        const pairs = await ssGetPairs(symbol, false);
+        const normalized = (pairs || []).map((p) => p.toLowerCase());
+        setAvailableToForFrom(normalized);
+        if (!normalized.includes(toCurrency.toLowerCase())) {
+          // сбрасываем на первую доступную
+          const next = normalized[0] || 'usdt';
+          setToCurrency(next);
+          if (fromAmount) await handleFromAmountChange(fromAmount);
+        }
+      } catch (e) {
+        console.warn('Не удалось загрузить пары для', fromCurrency, e);
+        setAvailableToForFrom([]);
+      }
+    };
+    loadPairs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromCurrency]);
 
   // Загружаем историю сделок из localStorage
   useEffect(() => {
@@ -135,7 +160,7 @@ const ExchangeInterface: React.FC = () => {
   }, []);
 
   // Используем актуальные курсы обмена из сервиса
-  const exchangeRate = fromCurrency === 'TRX' ? 
+  const exchangeRate = fromCurrency.toUpperCase() === 'TRX' ? 
     rates.TRX_TO_USDT : rates.USDT_TO_TRX;
 
   const handleSwap = () => {
@@ -153,21 +178,23 @@ const ExchangeInterface: React.FC = () => {
       return;
     }
 
+    const fromU = fromCurrency.toUpperCase();
+    const toU = toCurrency.toUpperCase();
     const isTrxUsdtPair =
-      (fromCurrency === 'TRX' && toCurrency === 'USDT') ||
-      (fromCurrency === 'USDT' && toCurrency === 'TRX');
+      (fromU === 'TRX' && toU === 'USDT') ||
+      (fromU === 'USDT' && toU === 'TRX');
 
     try {
       if (isTrxUsdtPair) {
         let calculatedAmount;
-        if (fromCurrency === 'TRX' && toCurrency === 'USDT') {
+        if (fromU === 'TRX' && toU === 'USDT') {
           calculatedAmount = (parseFloat(value) * rates.TRX_TO_USDT).toFixed(6);
         } else {
           calculatedAmount = (parseFloat(value) * rates.USDT_TO_TRX).toFixed(6);
         }
         setToAmount(calculatedAmount);
       } else {
-        const est = await ssEstimate(fromCurrency, toCurrency, value, false);
+        const est = await ssEstimate(fromCurrency.toLowerCase(), toCurrency.toLowerCase(), value, false);
         setToAmount(est.estimated_amount);
       }
     } catch (e: any) {
@@ -190,16 +217,18 @@ const ExchangeInterface: React.FC = () => {
     setError(null);
     setLoading(true);
 
+    const fromU = fromCurrency.toUpperCase();
+    const toU = toCurrency.toUpperCase();
     const isTrxUsdtPair =
-      (fromCurrency === 'TRX' && toCurrency === 'USDT') ||
-      (fromCurrency === 'USDT' && toCurrency === 'TRX');
+      (fromU === 'TRX' && toU === 'USDT') ||
+      (fromU === 'USDT' && toU === 'TRX');
 
     try {
       if (isTrxUsdtPair) {
         // Внутренний провайдер (как было)
         const response = await createExchangeRequest({
-          from: fromCurrency,
-          to: toCurrency,
+          from: fromU as Currency,
+          to: toU as Currency,
           amount: parseFloat(fromAmount),
           destinationAddress: destinationAddress.trim()
         });
@@ -255,8 +284,8 @@ const ExchangeInterface: React.FC = () => {
       } else {
         // SimpleSwap провайдер
         const createResp = await ssCreateExchange({
-          currency_from: fromCurrency,
-          currency_to: toCurrency,
+          currency_from: fromCurrency.toLowerCase(),
+          currency_to: toCurrency.toLowerCase(),
           amount: parseFloat(fromAmount),
           address_to: destinationAddress.trim(),
           fixed: false
@@ -717,18 +746,18 @@ const ExchangeInterface: React.FC = () => {
                 className="bg-gray-900/60 text-gray-200 text-sm rounded-md px-2 py-1 border border-gray-700/50"
               >
                 {availableSymbols.map((sym) => (
-                  <option key={sym} value={sym}>{sym}</option>
+                  <option key={sym} value={sym}>{sym.toUpperCase()}</option>
                 ))}
               </select>
             </div>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
                 <img 
-                  src={getCurrencyIcon(fromCurrency)} 
-                  alt={fromCurrency}
+                  src={getCurrencyIcon(fromCurrency.toUpperCase())} 
+                  alt={fromCurrency.toUpperCase()}
                   className="w-6 h-6 rounded-full"
                 />
-                <span className="text-white font-medium">{fromCurrency}</span>
+                <span className="text-white font-medium">{fromCurrency.toUpperCase()}</span>
               </div>
               <div className="flex-1 relative">
                 <input
@@ -765,19 +794,19 @@ const ExchangeInterface: React.FC = () => {
                 }}
                 className="bg-gray-900/60 text-gray-200 text-sm rounded-md px-2 py-1 border border-gray-700/50"
               >
-                {availableSymbols.map((sym) => (
-                  <option key={sym} value={sym}>{sym}</option>
+                {(availableToForFrom.length > 0 ? availableToForFrom : availableSymbols).map((sym) => (
+                  <option key={sym} value={sym}>{sym.toUpperCase()}</option>
                 ))}
               </select>
             </div>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
                 <img 
-                  src={getCurrencyIcon(toCurrency)} 
-                  alt={toCurrency}
+                  src={getCurrencyIcon(toCurrency.toUpperCase())} 
+                  alt={toCurrency.toUpperCase()}
                   className="w-6 h-6 rounded-full"
                 />
-                <span className="text-white font-medium">{toCurrency}</span>
+                <span className="text-white font-medium">{toCurrency.toUpperCase()}</span>
               </div>
               <div className="flex-1 relative">
                 <input
@@ -810,16 +839,16 @@ const ExchangeInterface: React.FC = () => {
             <span className="text-gray-400 text-sm">{t('liveStats.exchangeRate')}</span>
             <div className="flex items-center">
               <span className="text-white font-medium mr-1">1</span>
-              <img src={getCurrencyIcon(fromCurrency)} alt={fromCurrency} className="w-4 h-4 mr-1" />
+              <img src={getCurrencyIcon(fromCurrency.toUpperCase())} alt={fromCurrency.toUpperCase()} className="w-4 h-4 mr-1" />
               <span className="text-white font-medium">=</span>
               <span className="text-white font-medium mx-1">
                 {(
                   () => {
-                    const isTrxUsdtPair =
-                      (fromCurrency === 'TRX' && toCurrency === 'USDT') ||
-                      (fromCurrency === 'USDT' && toCurrency === 'TRX');
+                    const fromU2 = fromCurrency.toUpperCase();
+                    const toU2 = toCurrency.toUpperCase();
+                    const isTrxUsdtPair = (fromU2 === 'TRX' && toU2 === 'USDT') || (fromU2 === 'USDT' && toU2 === 'TRX');
                     if (isTrxUsdtPair) {
-                      return (fromCurrency === 'TRX' ? rates.TRX_TO_USDT.toFixed(6) : rates.USDT_TO_TRX.toFixed(6)) as unknown as React.ReactNode;
+                      return fromU2 === 'TRX' ? rates.TRX_TO_USDT.toFixed(6) : rates.USDT_TO_TRX.toFixed(6);
                     }
                     if (fromAmount && toAmount) {
                       const f = parseFloat(fromAmount);
@@ -832,7 +861,7 @@ const ExchangeInterface: React.FC = () => {
                   }
                 )()}
               </span>
-              <img src={getCurrencyIcon(toCurrency)} alt={toCurrency} className="w-4 h-4" />
+              <img src={getCurrencyIcon(toCurrency.toUpperCase())} alt={toCurrency.toUpperCase()} className="w-4 h-4" />
               {ratesLoading && <span className="text-xs text-blue-400 ml-2">(Обновляется...)</span>}
             </div>
           </div>
@@ -854,7 +883,7 @@ const ExchangeInterface: React.FC = () => {
               <span className="text-gray-400">You'll receive</span>
               <div className="flex items-center">
                 <span className="text-green-400">{toAmount || '0.00'}</span>
-                <img src={getCurrencyIcon(toCurrency)} alt={toCurrency} className="w-4 h-4 ml-1" />
+                <img src={getCurrencyIcon(toCurrency.toUpperCase())} alt={toCurrency.toUpperCase()} className="w-4 h-4 ml-1" />
               </div>
             </div>
           </div>
@@ -945,8 +974,8 @@ const ExchangeInterface: React.FC = () => {
                 <div className="flex items-center">
                   <span className="text-white font-bold">{paymentDetails.amountToSend}</span>
                   <img 
-                    src={getCurrencyIcon(fromCurrency)} 
-                    alt={fromCurrency}
+                    src={getCurrencyIcon(fromCurrency.toUpperCase())} 
+                    alt={fromCurrency.toUpperCase()}
                     className="w-4 h-4 ml-1"
                   />
                 </div>
@@ -956,8 +985,8 @@ const ExchangeInterface: React.FC = () => {
                 <div className="flex items-center">
                   <span className="text-green-400 font-bold">{paymentDetails.receivingAmount}</span>
                   <img 
-                    src={getCurrencyIcon(toCurrency)} 
-                    alt={toCurrency}
+                    src={getCurrencyIcon(toCurrency.toUpperCase())} 
+                    alt={toCurrency.toUpperCase()}
                     className="w-4 h-4 ml-1"
                   />
                 </div>
