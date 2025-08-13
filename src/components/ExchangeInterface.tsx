@@ -5,7 +5,7 @@ import { useExchangeRates, checkUsdtTransactions } from '../services/ratesServic
 import { useLanguage } from '../contexts/LanguageContext';
 import { ssEstimate, ssCreateExchange, ssGetStatus } from '../services/simpleSwapApi';
 import type { SimpleSwapCurrency } from '../services/simpleSwapApi';
-import { ssGetPairs } from '../services/simpleSwapApi';
+import { ssV3GetCurrencies, ssV3GetPairsFor, ssV3Estimate } from '../services/simpleSwapApi';
 
 // Интерфейсы для истории сделок
 interface ExchangeHistoryItem {
@@ -37,12 +37,17 @@ import ethIcon from '/icons8-ethereum-512.png';
 // Импортируем QR код
 import QRCode from 'qrcode';
 
+// Резервный список популярных монет до загрузки полного списка
+const FALLBACK_SYMBOLS = ['trx', 'usdt', 'btc', 'eth', 'usdc', 'sol'];
+
 const ExchangeInterface: React.FC = () => {
   const { t } = useLanguage();
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState<string>('trx');
+  const [fromNetwork, setFromNetwork] = useState<string | undefined>(undefined);
   const [toCurrency, setToCurrency] = useState<string>('usdt');
+  const [toNetwork, setToNetwork] = useState<string | undefined>(undefined);
   const [isSwapped, setIsSwapped] = useState(false);
   const [destinationAddress, setDestinationAddress] = useState('');
   const [exchangeStarted, setExchangeStarted] = useState(false);
@@ -66,39 +71,81 @@ const ExchangeInterface: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<ExchangeHistoryItem | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [ssCurrencies, setSsCurrencies] = useState<SimpleSwapCurrency[]>([]);
+  const [ssCurrencies, setSsCurrencies] = useState<Array<{ ticker: string; network?: string }>>([]);
   const [availableToForFrom, setAvailableToForFrom] = useState<string[]>([]);
   const availableSymbols = React.useMemo(() => {
-    const base = ['trx','usdt','btc','eth','usdc','sol'];
-    const set = new Set<string>(base);
-    ssCurrencies.forEach((c) => {
-      if (c && c.symbol) set.add(c.symbol);
-    });
-    return Array.from(set).sort();
+    if (ssCurrencies.length === 0) return FALLBACK_SYMBOLS;
+    const all = ssCurrencies
+      .filter((c) => !!c?.ticker)
+      .map((c) => c.ticker.toLowerCase());
+    // Убираем дубли, сортируем по алфавиту
+    return Array.from(new Set(all)).sort();
   }, [ssCurrencies]);
 
+  // Доступные сети для выбранных тикеров
+  const fromNetworks = React.useMemo(() => {
+    const nets = ssCurrencies
+      .filter((c) => c.ticker?.toLowerCase() === fromCurrency.toLowerCase())
+      .map((c) => (c.network || '').toLowerCase())
+      .filter(Boolean);
+    return Array.from(new Set(nets)).sort();
+  }, [ssCurrencies, fromCurrency]);
+
+  const toNetworks = React.useMemo(() => {
+    const nets = ssCurrencies
+      .filter((c) => c.ticker?.toLowerCase() === toCurrency.toLowerCase())
+      .map((c) => (c.network || '').toLowerCase())
+      .filter(Boolean);
+    return Array.from(new Set(nets)).sort();
+  }, [ssCurrencies, toCurrency]);
+
+  // Авто-выбор дефолтной сети при смене тикера
   useEffect(() => {
-    import('../services/simpleSwapApi').then(async ({ ssGetCurrencies }) => {
+    if (fromNetworks.length === 0) {
+      setFromNetwork(undefined);
+    } else if (!fromNetwork || !fromNetworks.includes(fromNetwork.toLowerCase())) {
+      setFromNetwork(fromNetworks[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromCurrency, fromNetworks.join(',')]);
+
+  useEffect(() => {
+    if (toNetworks.length === 0) {
+      setToNetwork(undefined);
+    } else if (!toNetwork || !toNetworks.includes(toNetwork.toLowerCase())) {
+      setToNetwork(toNetworks[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toCurrency, toNetworks.join(',')]);
+
+  useEffect(() => {
+    (async () => {
       try {
-        const cur = await ssGetCurrencies();
+        const cur = await ssV3GetCurrencies();
         setSsCurrencies(cur);
+        // Если текущая fromCurrency не поддерживается — сбросить на первую доступную
+        const allowedFrom = new Set(cur.map((c) => c.ticker.toLowerCase()));
+        if (!allowedFrom.has(fromCurrency)) {
+          const nextFrom = (FALLBACK_SYMBOLS.find((s) => allowedFrom.has(s)) || cur[0]?.ticker || 'trx').toLowerCase();
+          setFromCurrency(nextFrom);
+        }
       } catch (e) {
         console.warn('Не удалось загрузить валюты SimpleSwap:', e);
       }
-    });
+    })();
   }, []);
 
   // Подгружаем доступные пары назначения при смене fromCurrency
   useEffect(() => {
     const loadPairs = async () => {
       try {
-        const symbol = fromCurrency.toLowerCase();
-        const pairs = await ssGetPairs(symbol, false);
+        const pairs = await ssV3GetPairsFor(fromCurrency.toLowerCase(), fromNetwork);
         const normalized = (pairs || []).map((p) => p.toLowerCase());
         setAvailableToForFrom(normalized);
-        if (!normalized.includes(toCurrency.toLowerCase())) {
-          // сбрасываем на первую доступную
-          const next = normalized[0] || 'usdt';
+        const toLower = toCurrency.toLowerCase();
+        if (!normalized.includes(toLower)) {
+          // сбрасываем на usdt если есть, иначе первую доступную
+          const next = (normalized.includes('usdt') ? 'usdt' : (normalized[0] || 'usdt'));
           setToCurrency(next);
           if (fromAmount) await handleFromAmountChange(fromAmount);
         }
@@ -109,7 +156,7 @@ const ExchangeInterface: React.FC = () => {
     };
     loadPairs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromCurrency]);
+  }, [fromCurrency, fromNetwork]);
 
   // Загружаем историю сделок из localStorage
   useEffect(() => {
@@ -194,8 +241,14 @@ const ExchangeInterface: React.FC = () => {
         }
         setToAmount(calculatedAmount);
       } else {
-        const est = await ssEstimate(fromCurrency.toLowerCase(), toCurrency.toLowerCase(), value, false);
-        setToAmount(est.estimated_amount);
+        const est = await ssV3Estimate({
+          from: { ticker: fromCurrency.toLowerCase(), network: fromNetwork },
+          to: { ticker: toCurrency.toLowerCase(), network: toNetwork },
+          amount: String(value)
+        });
+        // В v3 ответ — объект, извлекаем amount
+        const amountTo = (est?.to?.amount || est?.amount || est?.estimated_amount || '').toString();
+        setToAmount(amountTo);
       }
     } catch (e: any) {
       console.error('Ошибка расчета курса:', e);
@@ -750,6 +803,23 @@ const ExchangeInterface: React.FC = () => {
                 ))}
               </select>
             </div>
+            {fromNetworks.length > 1 && (
+              <div className="flex items-center justify-end mb-2">
+                <select
+                  value={fromNetwork || ''}
+                  onChange={async (e) => {
+                    const net = e.target.value || undefined;
+                    setFromNetwork(net);
+                    if (fromAmount) await handleFromAmountChange(fromAmount);
+                  }}
+                  className="bg-gray-900/60 text-gray-300 text-xs rounded-md px-2 py-1 border border-gray-700/50"
+                >
+                  {fromNetworks.map((net) => (
+                    <option key={net} value={net}>{net.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
                 <img 
@@ -794,11 +864,28 @@ const ExchangeInterface: React.FC = () => {
                 }}
                 className="bg-gray-900/60 text-gray-200 text-sm rounded-md px-2 py-1 border border-gray-700/50"
               >
-                {(availableToForFrom.length > 0 ? availableToForFrom : availableSymbols).map((sym) => (
+                {(availableToForFrom.length > 0 ? availableToForFrom : []).map((sym) => (
                   <option key={sym} value={sym}>{sym.toUpperCase()}</option>
                 ))}
               </select>
             </div>
+            {toNetworks.length > 1 && (
+              <div className="flex items-center justify-end mb-2">
+                <select
+                  value={toNetwork || ''}
+                  onChange={async (e) => {
+                    const net = e.target.value || undefined;
+                    setToNetwork(net);
+                    if (fromAmount) await handleFromAmountChange(fromAmount);
+                  }}
+                  className="bg-gray-900/60 text-gray-300 text-xs rounded-md px-2 py-1 border border-gray-700/50"
+                >
+                  {toNetworks.map((net) => (
+                    <option key={net} value={net}>{net.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
                 <img 

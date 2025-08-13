@@ -1895,7 +1895,7 @@ app.get('/simpleswap/pairs', async (req, res) => {
     if (!symbol) {
       return res.status(400).json({ success: false, error: 'symbol обязателен' });
     }
-    const url = `${SIMPLESWAP_BASE}/get_pairs?symbol=${encodeURIComponent(String(symbol))}&fixed=${fixed === 'true' ? 'false' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_pairs?symbol=${encodeURIComponent(String(symbol))}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1915,7 +1915,7 @@ app.get('/api/simpleswap/pairs', async (req, res) => {
     if (!symbol) {
       return res.status(400).json({ success: false, error: 'symbol обязателен' });
     }
-    const url = `${SIMPLESWAP_BASE}/get_pairs?symbol=${encodeURIComponent(String(symbol))}&fixed=${fixed === 'true' ? 'false' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const url = `${SIMPLESWAP_BASE}/get_pairs?symbol=${encodeURIComponent(String(symbol))}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text();
@@ -1925,6 +1925,148 @@ app.get('/api/simpleswap/pairs', async (req, res) => {
     res.json({ success: true, symbol: String(symbol), pairs: Array.isArray(data) ? data : [] });
   } catch (e) {
     console.error('❌ SimpleSwap pairs error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// SimpleSwap v3 — currencies
+app.get('/simpleswap/v3/currencies', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v3/currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, currencies: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 currencies error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+app.get('/api/simpleswap/v3/currencies', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v3/currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, currencies: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 currencies error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// SimpleSwap v3 — all pairs
+app.get('/simpleswap/v3/pairs-all', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v3/pairs?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, pairs: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 pairs-all error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+app.get('/api/simpleswap/v3/pairs-all', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v3/pairs?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, pairs: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 pairs-all error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// SimpleSwap v3 — pairs for ticker/network (network необязателен)
+app.get('/simpleswap/v3/pairs-for', async (req, res) => {
+  try {
+    const { ticker, network } = req.query;
+    if (!ticker) return res.status(400).json({ success: false, error: 'ticker обязателен' });
+    const path = network ? `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}` : `/v3/pairs/${encodeURIComponent(String(ticker))}`;
+    const url = `${SIMPLESWAP_BASE}${path}?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, pairs: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 pairs-for error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+app.get('/api/simpleswap/v3/pairs-for', async (req, res) => {
+  try {
+    const { ticker, network } = req.query;
+    if (!ticker) return res.status(400).json({ success: false, error: 'ticker обязателен' });
+    const path = network ? `/v3/pairs/${encodeURIComponent(String(ticker))}/${encodeURIComponent(String(network))}` : `/v3/pairs/${encodeURIComponent(String(ticker))}`;
+    const url = `${SIMPLESWAP_BASE}${path}?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, pairs: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 pairs-for error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// SimpleSwap v3 — estimates (проброс тела)
+app.post('/simpleswap/v3/estimates', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v3/estimates?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body || {})
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, estimate: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 estimates error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+app.post('/api/simpleswap/v3/estimates', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v3/estimates?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body || {})
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap v3 error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, estimate: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap v3 estimates error:', e);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
