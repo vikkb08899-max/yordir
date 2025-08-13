@@ -1,7 +1,10 @@
 import React from 'react';
 import { Shield, Zap, Users } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Footer: React.FC = () => {
+  const { t } = useLanguage();
+  
   return (
     <footer className="bg-black/80 backdrop-blur-lg border-t border-gray-800 mt-16">
       <div className="container mx-auto px-4 py-12">
@@ -11,28 +14,27 @@ const Footer: React.FC = () => {
             <div className="flex items-center space-x-3 mb-4">
               <img src="/logo.png" alt="CryptoXchange" className="w-10 h-10 rounded-lg" />
               <div>
-                <h1 className="text-xl font-bold text-white">CryptoXchange</h1>
-                <p className="text-xs text-gray-400">Global Crypto Exchange</p>
+                <h1 className="text-xl font-bold text-white">{t('header.title')}</h1>
+                <p className="text-xs text-gray-400">{t('header.tagline')}</p>
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Professional cryptocurrency exchange operating worldwide with instant 
-              crypto-to-crypto, crypto-to-fiat, and fiat-to-crypto exchanges.
+              {t('hero.description')}
             </p>
           </div>
 
           {/* Legal */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Legal</h3>
+            <h3 className="text-white font-semibold mb-4">{t('footer.legal')}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <a href="/privacy" className="hover:text-white transition-colors cursor-pointer">
-                  Privacy Policy
+                  {t('footer.privacy')}
                 </a>
               </li>
               <li>
                 <a href="/terms" className="hover:text-white transition-colors cursor-pointer">
-                  Terms & Conditions
+                  {t('footer.terms')}
                 </a>
               </li>
             </ul>
@@ -40,7 +42,7 @@ const Footer: React.FC = () => {
 
           {/* Features */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Features</h3>
+            <h3 className="text-white font-semibold mb-4">{t('footer.services')}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
               <li className="flex items-center space-x-2">
                 <Shield className="w-4 h-4 text-green-400" />
@@ -62,7 +64,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col lg:flex-row items-center justify-between">
             <div className="text-sm text-gray-400 mb-4 lg:mb-0">
-              © 2025 CryptoXchange. All rights reserved.
+              {t('footer.copyright')}
             </div>
             
             <div className="flex items-center space-x-6">

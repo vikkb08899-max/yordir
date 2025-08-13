@@ -9,22 +9,70 @@ import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsConditions from './components/TermsConditions';
 import { TrendingUp, Zap, Shield, RefreshCw } from 'lucide-react';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+
+function FeaturesGrid() {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-blue-500/50 transition-all duration-300 group">
+        <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-500/30 transition-colors">
+          <TrendingUp className="w-6 h-6 text-blue-400" />
+        </div>
+        <h3 className="text-white font-bold text-lg mb-2">{t('features.globalCoverage.title')}</h3>
+        <p className="text-slate-300 text-sm">
+          {t('features.globalCoverage.description')}
+        </p>
+      </div>
+
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-emerald-500/50 transition-all duration-300 group">
+        <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500/30 transition-colors">
+          <RefreshCw className="w-6 h-6 text-emerald-400" />
+        </div>
+        <h3 className="text-white font-bold text-lg mb-2">{t('features.instantExchange.title')}</h3>
+        <p className="text-slate-300 text-sm">
+          {t('features.instantExchange.description')}
+        </p>
+      </div>
+
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-red-500/50 transition-all duration-300 group">
+        <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
+          <Shield className="w-6 h-6 text-red-400" />
+        </div>
+        <h3 className="text-white font-bold text-lg mb-2">{t('features.bankGradeSecurity.title')}</h3>
+        <p className="text-slate-300 text-sm">
+          {t('features.bankGradeSecurity.description')}
+        </p>
+      </div>
+
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-cyan-500/50 transition-all duration-300 group">
+        <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-cyan-500/30 transition-colors">
+          <Zap className="w-6 h-6 text-cyan-400" />
+        </div>
+        <h3 className="text-white font-bold text-lg mb-2">{t('features.smartTrading.title')}</h3>
+        <p className="text-slate-300 text-sm">
+          {t('features.smartTrading.description')}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function HomePage() {
+  const { t } = useLanguage();
+  
   return (
     <>
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-6">
-            Global Crypto Exchange
-            <span className="block text-red-500">Trusted Worldwide</span>
+            {t('hero.title')}
+            <span className="block text-red-500">{t('hero.subtitle')}</span>
           </h1>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8">
-            Professional cryptocurrency exchange operating in major cities worldwide. 
-            Instant crypto-to-crypto, crypto-to-fiat, and fiat-to-crypto exchanges with 
-            competitive rates and 24/7 support.
+            {t('hero.description')}
           </p>
         </div>
       </section>
@@ -48,47 +96,7 @@ function HomePage() {
 
         {/* Features Grid - moved here */}
         <section className="w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-blue-500/50 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-500/30 transition-colors">
-                <TrendingUp className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className="text-white font-bold text-lg mb-2">Global Coverage</h3>
-              <p className="text-slate-300 text-sm">
-                Operating in major cities worldwide with local payment methods and support
-              </p>
-            </div>
-
-            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-emerald-500/50 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500/30 transition-colors">
-                <RefreshCw className="w-6 h-6 text-emerald-400" />
-              </div>
-              <h3 className="text-white font-bold text-lg mb-2">Instant Exchange</h3>
-              <p className="text-slate-300 text-sm">
-                Lightning-fast crypto exchanges with real-time rates and minimal fees
-              </p>
-            </div>
-
-            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-red-500/50 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
-                <Shield className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className="text-white font-bold text-lg mb-2">Bank-Grade Security</h3>
-              <p className="text-slate-300 text-sm">
-                99.9% uptime, cold storage, and 24/7 monitoring for maximum security
-              </p>
-            </div>
-
-            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-cyan-500/50 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-cyan-500/30 transition-colors">
-                <Zap className="w-6 h-6 text-cyan-400" />
-              </div>
-              <h3 className="text-white font-bold text-lg mb-2">Smart Trading</h3>
-              <p className="text-slate-300 text-sm">
-                Advanced algorithms for optimal rates and automated portfolio management
-              </p>
-            </div>
-          </div>
+          <FeaturesGrid />
         </section>
       </main>
     </>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Menu, X, Wallet, Bell, User, Shield, FileText } from 'lucide-react';
 import { useExchangeRates } from '../services/ratesService';
+import { useLanguage } from '../contexts/LanguageContext';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -9,6 +10,7 @@ const Header: React.FC = () => {
   const [change, setChange] = useState(2.45);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { rates, isLoading } = useExchangeRates();
+  const { t } = useLanguage();
 
   // Вычисляем цену TRX в USDT
   const price = rates.TRX_TO_USDT;
@@ -34,9 +36,9 @@ const Header: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                CryptoXchange
+                {t('header.title')}
               </h1>
-              <p className="text-xs text-gray-400 font-medium tracking-wide">GLOBAL CRYPTO EXCHANGE</p>
+              <p className="text-xs text-gray-400 font-medium tracking-wide">{t('header.tagline')}</p>
             </div>
           </div>
 
@@ -63,23 +65,23 @@ const Header: React.FC = () => {
           <div className="hidden lg:flex items-center space-x-6">
             <nav className="flex items-center space-x-8">
               <a href="#exchange" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
-                Exchange
+                {t('exchange.title')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
               <a href="#crypto-fiat" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
-                Crypto-Fiat
+                {t('cryptoFiat.title')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
               <a href="#stats" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
-                Statistics
+                {t('liveStats.title')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
               <a href="/privacy" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
-                Privacy
+                {t('footer.privacy')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
               <a href="/terms" className="text-gray-300 hover:text-white transition-all duration-300 font-medium relative group">
-                Terms
+                {t('footer.terms')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-300 group-hover:w-full"></span>
               </a>
             </nav>
@@ -131,23 +133,23 @@ const Header: React.FC = () => {
               <nav className="flex flex-col space-y-4">
                 <a href="#exchange" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <TrendingUp className="w-5 h-5" />
-                  <span className="font-medium">Exchange</span>
+                  <span className="font-medium">{t('exchange.title')}</span>
                 </a>
                 <a href="#crypto-fiat" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <Wallet className="w-5 h-5" />
-                  <span className="font-medium">Crypto-Fiat</span>
+                  <span className="font-medium">{t('cryptoFiat.title')}</span>
                 </a>
                 <a href="#stats" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <User className="w-5 h-5" />
-                  <span className="font-medium">Statistics</span>
+                  <span className="font-medium">{t('liveStats.title')}</span>
                 </a>
                 <a href="/privacy" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <Shield className="w-5 h-5" />
-                  <span className="font-medium">Privacy Policy</span>
+                  <span className="font-medium">{t('footer.privacy')}</span>
                 </a>
                 <a href="/terms" className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50">
                   <FileText className="w-5 h-5" />
-                  <span className="font-medium">Terms & Conditions</span>
+                  <span className="font-medium">{t('footer.terms')}</span>
                 </a>
               </nav>
             </div>
