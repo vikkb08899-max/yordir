@@ -127,10 +127,36 @@ const CryptoFiat: React.FC = () => {
     { symbol: 'UAH', name: 'Гривна', icon: '₴' }
   ];
 
-  // Функция для получения курса из общего сервиса курсов
-  const getRateFromService = (cryptoId: string, fiatSymbol: string) => {
-    const rateKey = `${cryptoId.toUpperCase()}-${fiatSymbol.toUpperCase()}`;
-    return rates[rateKey] || null;
+  // Функция для получения курса из общего сервиса курсов с вычислением через USDT/USD
+  const getRateFromService = (cryptoSymbol: string, fiatSymbol: string) => {
+    const c = cryptoSymbol.toUpperCase();
+    const f = fiatSymbol.toUpperCase();
+
+    // 1) Прямой ключ
+    const direct = rates[`${c}-${f}`];
+    if (direct && direct > 0) return direct;
+
+    // 2) Через USDT -> USD -> FIAT
+    const cUsdt = rates[`${c}-USDT`];
+    const usdtUsd = rates[`USDT-USD`];
+    const usdF = rates[`USD-${f}`];
+    if (cUsdt && usdtUsd && usdF) {
+      return cUsdt * usdtUsd * usdF;
+    }
+
+    // 3) Через USDT -> EUR -> FIAT
+    const usdtEur = rates[`USDT-EUR`];
+    const eurF = rates[`EUR-${f}`];
+    if (cUsdt && usdtEur && eurF) {
+      return cUsdt * usdtEur * eurF;
+    }
+
+    // 4) Через USD (если нужен только USD)
+    if (f === 'USD' && cUsdt && usdtUsd) {
+      return cUsdt * usdtUsd;
+    }
+
+    return null;
   };
 
   // Маппинг криптовалют к CoinGecko ID
@@ -146,8 +172,8 @@ const CryptoFiat: React.FC = () => {
     }
   };
 
-  // Функция для получения курса и расчета суммы
-  const calculateAmount = (inputAmount: string) => {
+  // Функция для получения курса и расчета суммы (через бэкенд)
+  const calculateAmount = async (inputAmount: string) => {
     if (!selectedCrypto || !selectedFiat || !inputAmount || parseFloat(inputAmount) <= 0) {
       setCalculatedAmount('');
       setExchangeRate(0);
@@ -156,41 +182,26 @@ const CryptoFiat: React.FC = () => {
     }
 
     try {
-      if (exchangeType === 'crypto-to-fiat') {
-        // Получаем курс криптовалюты к фиату из сервиса
-        const cryptoId = getCryptoId(selectedCrypto.symbol);
-        const rate = getRateFromService(cryptoId, selectedFiat.symbol);
-        
-        if (rate) {
-          setExchangeRate(rate);
-          setMargin(2.5); // Наценка 2.5%
-          
-          const calculated = parseFloat(inputAmount) * rate * (1 - 0.025); // Применяем наценку
-          setCalculatedAmount(calculated.toFixed(2));
-        } else {
-          console.error('Не удалось получить курс');
-          setCalculatedAmount('');
-          setExchangeRate(0);
-          setMargin(0);
-        }
+      const fromSymbol = exchangeType === 'crypto-to-fiat' ? selectedCrypto.symbol : selectedFiat.symbol;
+      const toSymbol = exchangeType === 'crypto-to-fiat' ? selectedFiat.symbol : selectedCrypto.symbol;
+
+      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
+      const response = await fetch(`${API_URL}/crypto-fiat-rate/${fromSymbol}/${toSymbol}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setExchangeRate(data.finalRate);
+        setMargin(data.margin);
+
+        const calculated = parseFloat(inputAmount) * data.finalRate;
+        setCalculatedAmount(
+          (exchangeType === 'crypto-to-fiat' ? calculated : calculated).toFixed(exchangeType === 'crypto-to-fiat' ? 2 : 6)
+        );
       } else {
-        // Для fiat-to-crypto используем обратный курс
-        const cryptoId = getCryptoId(selectedCrypto.symbol);
-        const rate = getRateFromService(cryptoId, selectedFiat.symbol);
-        
-        if (rate) {
-          const reverseRate = 1 / rate;
-          setExchangeRate(reverseRate);
-          setMargin(2.5); // Наценка 2.5%
-          
-          const calculated = parseFloat(inputAmount) * reverseRate * (1 - 0.025); // Применяем наценку
-          setCalculatedAmount(calculated.toFixed(6));
-        } else {
-          console.error('Не удалось получить курс');
-          setCalculatedAmount('');
-          setExchangeRate(0);
-          setMargin(0);
-        }
+        console.error('Ошибка получения курса:', data.error);
+        setCalculatedAmount('');
+        setExchangeRate(0);
+        setMargin(0);
       }
     } catch (error) {
       console.error('Ошибка при расчете суммы:', error);
