@@ -19,12 +19,35 @@ const DEFAULT_RATES = {
   USDT_TO_TRX: 11.76
 };
 
+// Конфигурация для CoinGecko API
+const COINGECKO_CONFIG = {
+  BASE_URL: 'https://api.coingecko.com/api/v3',
+  UPDATE_INTERVAL: 5 * 60 * 1000, // 5 минут
+  BATCH_DELAY: 30 * 1000, // 30 секунд между батчами
+  REQUEST_DELAY: 1000, // 1 секунда между запросами
+  TIMEOUT: 10000, // 10 секунд таймаут
+};
+
+// Маппинг криптовалют к CoinGecko ID
+const CRYPTO_IDS = {
+  TRX: 'tron',
+  USDT: 'tether',
+  SOL: 'solana',
+  BTC: 'bitcoin',
+  ETH: 'ethereum',
+  USDC: 'usd-coin'
+};
+
+// Поддерживаемые фиатные валюты
+const FIAT_CURRENCIES = ['usd', 'eur', 'pln', 'uah'];
+
 // Синглтон для обмена данными между компонентами
 const ratesStore = {
   rates: { ...DEFAULT_RATES },
   lastUpdate: null as string | null,
   isLoading: false,
   listeners: new Set<() => void>(),
+  cache: new Map<string, { rate: number; timestamp: number }>(),
 
   // Метод для подписки на обновления
   subscribe(listener: () => void) {
@@ -50,70 +73,159 @@ const ratesStore = {
   setLoading(isLoading: boolean) {
     this.isLoading = isLoading;
     this.notifyListeners();
+  },
+
+  // Метод для кэширования курса
+  cacheRate(key: string, rate: number) {
+    this.cache.set(key, { rate, timestamp: Date.now() });
+  },
+
+  // Метод для получения кэшированного курса
+  getCachedRate(key: string): number | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < COINGECKO_CONFIG.UPDATE_INTERVAL) {
+      return cached.rate;
+    }
+    return null;
+  },
+
+  // Метод для проверки необходимости обновления
+  needsUpdate(): boolean {
+    if (!this.lastUpdate) return true;
+    return Date.now() - new Date(this.lastUpdate).getTime() > COINGECKO_CONFIG.UPDATE_INTERVAL;
   }
 };
 
-// Функция для получения актуального курса с сервера
-export async function fetchExchangeRates(): Promise<RatesResponse> {
-  console.log(`[${new Date().toLocaleTimeString()}] 🔄 Получение курсов с сервера...`);
+// Функция для задержки
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Функция для получения курса с CoinGecko
+async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promise<number | null> {
+  const cacheKey = `${cryptoId}-${fiatCurrency}`;
   
+  // Проверяем кэш
+  const cachedRate = ratesStore.getCachedRate(cacheKey);
+  if (cachedRate !== null) {
+    return cachedRate;
+  }
+
   try {
-    ratesStore.setLoading(true);
-    
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 секунд таймаут
-    
-    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
-    const response = await fetch(`${API_URL}/exchange-rates`, {
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
+    const timeoutId = setTimeout(() => controller.abort(), COINGECKO_CONFIG.TIMEOUT);
+
+    const response = await fetch(
+      `${COINGECKO_CONFIG.BASE_URL}/simple/price?ids=${cryptoId}&vs_currencies=${fiatCurrency}`,
+      { signal: controller.signal }
+    );
+
     clearTimeout(timeoutId);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
+    const rate = data[cryptoId]?.[fiatCurrency];
+
+    if (rate && typeof rate === 'number') {
+      ratesStore.cacheRate(cacheKey, rate);
+      return rate;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Ошибка получения курса ${cryptoId}/${fiatCurrency}:`, error);
+    return null;
+  }
+}
+
+// Функция для получения курсов батчами
+async function fetchRatesBatch(cryptoIds: string[], fiatCurrencies: string[]): Promise<Map<string, number>> {
+  const rates = new Map<string, number>();
+
+  for (const cryptoId of cryptoIds) {
+    for (const fiatCurrency of fiatCurrencies) {
+      const rate = await fetchCoinGeckoRate(cryptoId, fiatCurrency);
+      if (rate !== null) {
+        rates.set(`${cryptoId}-${fiatCurrency}`, rate);
+      }
+      
+      // Задержка между запросами
+      await delay(COINGECKO_CONFIG.REQUEST_DELAY);
+    }
+  }
+
+  return rates;
+}
+
+// Функция для получения всех курсов обмена
+export async function fetchExchangeRates(): Promise<RatesResponse> {
+  console.log(`[${new Date().toLocaleTimeString()}] 🔄 Проверка необходимости обновления курсов...`);
+  
+  // Проверяем, нужно ли обновление
+  if (!ratesStore.needsUpdate()) {
+    console.log('✅ Используем кэшированные курсы');
+    return {
+      success: true,
+      rates: ratesStore.rates,
+      lastUpdate: ratesStore.lastUpdate
+    };
+  }
+
+  console.log('🔄 Начинаем обновление курсов...');
+  ratesStore.setLoading(true);
+
+  try {
+    // Разбиваем криптовалюты на два батча
+    const cryptoIds = Object.values(CRYPTO_IDS);
+    const batch1 = cryptoIds.slice(0, Math.ceil(cryptoIds.length / 2));
+    const batch2 = cryptoIds.slice(Math.ceil(cryptoIds.length / 2));
+
+    console.log('📦 Батч 1:', batch1);
+    const rates1 = await fetchRatesBatch(batch1, FIAT_CURRENCIES);
     
-    if (data.success && data.exchangeRates) {
-      // Извлекаем все курсы из новой структуры данных
-      const exchangeRates = data.exchangeRates;
-      
-      // Создаем объект с курсами, включая TRX/USDT для совместимости
-      const rates = {
-        TRX_TO_USDT: exchangeRates['TRX-USDT'] || 0,
-        USDT_TO_TRX: exchangeRates['USDT-TRX'] || 0,
-        ...exchangeRates // Добавляем все остальные курсы
-      };
-      
-      ratesStore.updateRates(rates, data.lastUpdate);
-      console.log('✅ Курсы обмена обновлены:', {
-        'TRX → USDT': rates.TRX_TO_USDT,
-        'USDT → TRX': rates.USDT_TO_TRX,
-        'Обновлено': data.lastUpdate ? new Date(data.lastUpdate).toLocaleTimeString() : 'неизвестно'
-      });
-      
-      // Логируем доступные курсы
-      console.log('📊 Доступные курсы:', Object.keys(exchangeRates).filter(key => exchangeRates[key] > 0));
-      
-      return {
-        success: true,
-        rates: rates,
-        lastUpdate: data.lastUpdate
-      };
-    } else {
-      throw new Error('Получены некорректные курсы обмена');
+    console.log('⏳ Ожидание 30 секунд перед вторым батчем...');
+    await delay(COINGECKO_CONFIG.BATCH_DELAY);
+    
+    console.log('📦 Батч 2:', batch2);
+    const rates2 = await fetchRatesBatch(batch2, FIAT_CURRENCIES);
+
+    // Объединяем результаты
+    const allRates = new Map([...rates1, ...rates2]);
+
+    // Формируем объект курсов
+    const exchangeRates: ExchangeRates = { ...DEFAULT_RATES };
+
+    // Добавляем основные курсы TRX/USDT
+    const trxUsdRate = allRates.get('tron-usd');
+    if (trxUsdRate) {
+      exchangeRates.TRX_TO_USDT = trxUsdRate;
+      exchangeRates.USDT_TO_TRX = 1 / trxUsdRate;
     }
+
+    // Добавляем все остальные курсы
+    allRates.forEach((rate, key) => {
+      exchangeRates[key.toUpperCase()] = rate;
+    });
+
+    const lastUpdate = new Date().toISOString();
+    ratesStore.updateRates(exchangeRates, lastUpdate);
+
+    console.log('✅ Курсы обновлены:', {
+      'TRX → USDT': exchangeRates.TRX_TO_USDT,
+      'USDT → TRX': exchangeRates.USDT_TO_TRX,
+      'Всего курсов': allRates.size,
+      'Обновлено': new Date(lastUpdate).toLocaleTimeString()
+    });
+
+    return {
+      success: true,
+      rates: exchangeRates,
+      lastUpdate
+    };
+
   } catch (error: any) {
-    if (error.name === 'AbortError') {
-      console.error('❌ Таймаут при получении курсов обмена');
-    } else {
-      console.error('❌ Ошибка при получении курсов обмена:', error.message);
-    }
+    console.error('❌ Ошибка при обновлении курсов:', error.message);
     
     return {
       success: false,
@@ -163,11 +275,11 @@ export function useExchangeRates() {
     return unsubscribe;
   }, []);
 
-  // Запускаем обновление курсов каждую минуту
+  // Запускаем обновление курсов каждые 5 минут
   useEffect(() => {
     const interval = setInterval(() => {
       fetchExchangeRates();
-    }, 60 * 1000); // 1 минута
+    }, COINGECKO_CONFIG.UPDATE_INTERVAL);
     
     return () => clearInterval(interval);
   }, []);

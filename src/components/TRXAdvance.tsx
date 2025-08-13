@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Banknote, MapPin, Phone, Send, Globe, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useExchangeRates } from '../services/ratesService';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -30,6 +31,7 @@ interface FiatOption {
 
 const CryptoFiat: React.FC = () => {
   const { t, getCountryName, getCities } = useLanguage();
+  const { rates } = useExchangeRates();
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption | null>(null);
@@ -125,20 +127,10 @@ const CryptoFiat: React.FC = () => {
     { symbol: 'UAH', name: 'Гривна', icon: '₴' }
   ];
 
-  // Функция для получения курса через CoinGecko API
-  const getCoinGeckoRate = async (cryptoId: string, fiatSymbol: string) => {
-    try {
-      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=${fiatSymbol.toLowerCase()}`);
-      const data = await response.json();
-      
-      if (data[cryptoId] && data[cryptoId][fiatSymbol.toLowerCase()]) {
-        return data[cryptoId][fiatSymbol.toLowerCase()];
-      }
-      return null;
-    } catch (error) {
-      console.error('Ошибка получения курса с CoinGecko:', error);
-      return null;
-    }
+  // Функция для получения курса из общего сервиса курсов
+  const getRateFromService = (cryptoId: string, fiatSymbol: string) => {
+    const rateKey = `${cryptoId.toUpperCase()}-${fiatSymbol.toUpperCase()}`;
+    return rates[rateKey] || null;
   };
 
   // Маппинг криптовалют к CoinGecko ID
@@ -155,7 +147,7 @@ const CryptoFiat: React.FC = () => {
   };
 
   // Функция для получения курса и расчета суммы
-  const calculateAmount = async (inputAmount: string) => {
+  const calculateAmount = (inputAmount: string) => {
     if (!selectedCrypto || !selectedFiat || !inputAmount || parseFloat(inputAmount) <= 0) {
       setCalculatedAmount('');
       setExchangeRate(0);
@@ -165,9 +157,9 @@ const CryptoFiat: React.FC = () => {
 
     try {
       if (exchangeType === 'crypto-to-fiat') {
-        // Получаем курс криптовалюты к фиату через CoinGecko
+        // Получаем курс криптовалюты к фиату из сервиса
         const cryptoId = getCryptoId(selectedCrypto.symbol);
-        const rate = await getCoinGeckoRate(cryptoId, selectedFiat.symbol);
+        const rate = getRateFromService(cryptoId, selectedFiat.symbol);
         
         if (rate) {
           setExchangeRate(rate);
@@ -176,7 +168,7 @@ const CryptoFiat: React.FC = () => {
           const calculated = parseFloat(inputAmount) * rate * (1 - 0.025); // Применяем наценку
           setCalculatedAmount(calculated.toFixed(2));
         } else {
-          console.error('Не удалось получить курс с CoinGecko');
+          console.error('Не удалось получить курс');
           setCalculatedAmount('');
           setExchangeRate(0);
           setMargin(0);
@@ -184,7 +176,7 @@ const CryptoFiat: React.FC = () => {
       } else {
         // Для fiat-to-crypto используем обратный курс
         const cryptoId = getCryptoId(selectedCrypto.symbol);
-        const rate = await getCoinGeckoRate(cryptoId, selectedFiat.symbol);
+        const rate = getRateFromService(cryptoId, selectedFiat.symbol);
         
         if (rate) {
           const reverseRate = 1 / rate;
@@ -194,7 +186,7 @@ const CryptoFiat: React.FC = () => {
           const calculated = parseFloat(inputAmount) * reverseRate * (1 - 0.025); // Применяем наценку
           setCalculatedAmount(calculated.toFixed(6));
         } else {
-          console.error('Не удалось получить курс с CoinGecko');
+          console.error('Не удалось получить курс');
           setCalculatedAmount('');
           setExchangeRate(0);
           setMargin(0);
