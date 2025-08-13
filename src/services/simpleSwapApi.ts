@@ -64,6 +64,15 @@ async function parseJsonOrThrow(resp: Response) {
 	return resp.json();
 }
 
+function isServerError(e: unknown): boolean {
+	const msg = e instanceof Error ? e.message : String(e || '');
+	return /HTTP\s5\d\d/.test(msg);
+}
+
+function delay(ms: number) {
+	return new Promise((res) => setTimeout(res, ms));
+}
+
 export async function ssGetCurrencies(): Promise<SimpleSwapCurrency[]> {
 	const resp = await fetch(`${API_URL}/simpleswap/currencies`);
 	const data = await parseJsonOrThrow(resp);
@@ -86,10 +95,23 @@ export async function ssGetMin(from: string, to: string, fixed = false): Promise
 }
 
 export async function ssEstimate(from: string, to: string, amount: string | number, fixed = false): Promise<SimpleSwapEstimate> {
-	const resp = await fetch(`${API_URL}/simpleswap/estimate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(String(amount))}&fixed=${fixed ? 'true' : 'false'}`);
-	const data = await parseJsonOrThrow(resp);
-	if (!data.success) throw new Error(data.error || 'Ошибка получения оценки');
-	return data.estimate;
+	let lastErr: any = null;
+	for (let attempt = 0; attempt < 3; attempt++) {
+		try {
+			const resp = await fetch(`${API_URL}/simpleswap/estimate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(String(amount))}&fixed=${fixed ? 'true' : 'false'}`);
+			const data = await parseJsonOrThrow(resp);
+			if (!data.success) throw new Error(data.error || 'Ошибка получения оценки');
+			return data.estimate;
+		} catch (e) {
+			lastErr = e;
+			if (isServerError(e) && attempt < 2) {
+				await delay(400 * (attempt + 1));
+				continue;
+			}
+			break;
+		}
+	}
+	throw lastErr || new Error('Ошибка получения оценки');
 }
 
 export async function ssCreateExchange(payload: SimpleSwapCreatePayload): Promise<SimpleSwapCreateResponse> {
