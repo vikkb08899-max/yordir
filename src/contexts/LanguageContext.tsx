@@ -30,9 +30,23 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [language, setLanguageState] = useState<Language>('ru');
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as Language;
-    if (savedLanguage && (savedLanguage === 'ru' || savedLanguage === 'en')) {
-      setLanguageState(savedLanguage);
+    // Проверяем URL параметры для языка
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLang = urlParams.get('lang') as Language;
+    
+    if (urlLang && (urlLang === 'ru' || urlLang === 'en')) {
+      setLanguageState(urlLang);
+      localStorage.setItem('language', urlLang);
+      // Удаляем параметр из URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('lang');
+      window.history.replaceState({}, '', newUrl.toString());
+    } else {
+      // Проверяем сохраненный язык
+      const savedLanguage = localStorage.getItem('language') as Language;
+      if (savedLanguage && (savedLanguage === 'ru' || savedLanguage === 'en')) {
+        setLanguageState(savedLanguage);
+      }
     }
   }, []);
 

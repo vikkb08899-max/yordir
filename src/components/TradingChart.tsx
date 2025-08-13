@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { useExchangeRates } from '../services/ratesService';
+import { useLanguage } from '../contexts/LanguageContext';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -17,6 +18,7 @@ const TradingChart: React.FC = () => {
   const [timeframe, setTimeframe] = useState('1H');
   const [priceChange, setPriceChange] = useState(2.45);
   const { rates, isLoading } = useExchangeRates();
+  const { t, language } = useLanguage();
 
   // Получаем актуальный курс TRX в USDT
   const currentPrice = rates.TRX_TO_USDT;

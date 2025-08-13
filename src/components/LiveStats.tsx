@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Users, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Transaction {
   id: string;
@@ -19,6 +20,7 @@ const LiveStats: React.FC = () => {
     totalExchanges: 1247,
     avgExchangeRate: 1.0821
   });
+  const { t } = useLanguage();
 
   // Generate random crypto-fiat transactions
   useEffect(() => {

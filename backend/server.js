@@ -14,6 +14,25 @@ if (TELEGRAM_BOT_TOKEN) {
   const TelegramBot = require('node-telegram-bot-api');
   bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
   
+  // Команда /start с выбором языка
+  bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    
+    const message = '🌐 Выберите язык / Select language:';
+    const inlineKeyboard = [
+      [
+        { text: '🇷🇺 Русский', callback_data: 'lang_ru' },
+        { text: '🇺🇸 English', callback_data: 'lang_en' }
+      ]
+    ];
+    
+    bot.sendMessage(chatId, message, {
+      reply_markup: {
+        inline_keyboard: inlineKeyboard
+      }
+    });
+  });
+  
   // Команда для показа всех наценок
   bot.onText(/\/rates/, (msg) => {
     const chatId = msg.chat.id;
@@ -103,7 +122,35 @@ if (TELEGRAM_BOT_TOKEN) {
     const message = callbackQuery.message;
     const data = callbackQuery.data;
     
-    if (data.startsWith('rate_')) {
+    if (data.startsWith('lang_')) {
+      const language = data.replace('lang_', '');
+      
+      // Удаляем сообщение с выбором языка
+      bot.deleteMessage(message.chat.id, message.message_id);
+      
+      // Отправляем приветственное сообщение на выбранном языке
+      let welcomeMessage, buttonText;
+      if (language === 'ru') {
+        welcomeMessage = 'Добро пожаловать в обменный сервис CryptoXchange!\n\nЧтобы начать пользоваться нашим сервисом, нажмите кнопку ниже.';
+        buttonText = 'Открыть приложение';
+      } else {
+        welcomeMessage = 'Welcome to CryptoXchange exchange service!\n\nTo start using our service, click the button below.';
+        buttonText = 'Open App';
+      }
+      
+      const inlineKeyboard = [
+        [{
+          text: buttonText,
+          web_app: { url: `https://cryptoxchange.click?lang=${language}` }
+        }]
+      ];
+      
+      bot.sendMessage(message.chat.id, welcomeMessage, {
+        reply_markup: {
+          inline_keyboard: inlineKeyboard
+        }
+      });
+    } else if (data.startsWith('rate_')) {
       const pair = data.replace('rate_', '');
       const currentMargin = currentMargins[pair] || 0;
       

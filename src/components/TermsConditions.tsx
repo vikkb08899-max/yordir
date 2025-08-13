@@ -1,7 +1,10 @@
 import React from 'react';
 import { FileText, AlertTriangle, CheckCircle, XCircle, Shield, Users } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TermsConditions: React.FC = () => {
+  const { t } = useLanguage();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="container mx-auto px-4 py-12">
@@ -13,15 +16,11 @@ const TermsConditions: React.FC = () => {
                 <FileText className="w-6 h-6 text-red-400" />
               </div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Terms & Conditions
+                {t('terms.title')}
               </h1>
             </div>
             <p className="text-gray-400 text-lg">
-              Last updated: {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+              {t('terms.lastUpdated')}
             </p>
           </div>
 

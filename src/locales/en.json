@@ -43,7 +43,25 @@
     "checkStatus": "Check Status",
     "exchangeCompleted": "Exchange Completed!",
     "transactionHash": "Transaction Hash",
-    "newExchange": "New Exchange"
+    "newExchange": "New Exchange",
+    "swap": "Swap",
+    "youHave1Hour": "You have 1 hour to send funds. Request expires at",
+    "sendToThisAddress": "Send to this address",
+    "important": "Important!",
+    "scanToPay": "Scan to pay",
+    "sendExactAmount": "SEND EXACT AMOUNT:",
+    "sendExactAmountDesc": "Send exactly {amount} {currency}. Incorrect amount may result in loss of funds!",
+    "youWillReceive": "You will receive:",
+    "status": "Status:",
+    "waitingForPayment": "Waiting for payment",
+    "toAddress": "To address:",
+    "cancelExchange": "Cancel Exchange",
+    "exchangeRate": "Exchange rate:",
+    "networkFee": "Network fee:",
+    "totalToReceive": "Total to receive:",
+    "processing": "Processing...",
+    "error": "Error",
+    "tryAgain": "Try again"
   },
   "cryptoFiat": {
     "title": "Crypto ⇄ Fiat",
@@ -76,7 +94,13 @@
   },
   "tradingChart": {
     "title": "Trading Chart",
-    "subtitle": "Real-time market analysis"
+    "subtitle": "Real-time market analysis",
+    "price": "Price",
+    "volume": "Volume",
+    "timeframe": "Timeframe",
+    "lastPrice": "Last Price",
+    "priceChange": "Price Change",
+    "volume24h": "24h Volume"
   },
   "liveStats": {
     "title": "Live Statistics",
@@ -84,7 +108,13 @@
     "recentTransactions": "Recent Transactions",
     "activeUsers": "Active Users",
     "totalVolume": "Total Volume",
-    "exchangeRate": "Exchange Rate"
+    "exchangeRate": "Exchange Rate",
+    "noTransactions": "No transactions",
+    "viewAll": "View all",
+    "transactions": "Transactions",
+    "users": "Users",
+    "volume": "Volume",
+    "rate": "Rate"
   },
   "footer": {
     "services": "Services",
@@ -111,5 +141,38 @@
     "ES": ["Madrid", "Barcelona", "Valencia", "Seville", "Bilbao", "Malaga", "Zaragoza", "Murcia", "Palma", "Las Palmas"],
     "PL": ["Warsaw", "Krakow", "Lodz", "Wroclaw", "Poznan", "Gdansk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice"],
     "UA": ["Kyiv", "Kharkiv", "Odessa", "Dnipro", "Donetsk", "Zaporizhzhia", "Lviv", "Kryvyi Rih", "Mykolaiv", "Mariupol"]
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: January 1, 2025",
+    "intro": "CryptoXchange respects your privacy and is committed to protecting your personal data.",
+    "dataCollection": "Data Collection",
+    "dataCollectionDesc": "We collect only necessary information to provide our services.",
+    "dataUsage": "Data Usage",
+    "dataUsageDesc": "Your data is used exclusively for transaction processing and service improvement.",
+    "dataProtection": "Data Protection",
+    "dataProtectionDesc": "We use modern encryption methods to protect your data.",
+    "contactUs": "Contact Us",
+    "contactUsDesc": "If you have questions about our privacy policy, please contact us."
+  },
+  "terms": {
+    "title": "Terms and Conditions",
+    "lastUpdated": "Last updated: January 1, 2025",
+    "intro": "By using CryptoXchange services, you agree to the following terms.",
+    "services": "Services",
+    "servicesDesc": "We provide cryptocurrency and fiat currency exchange services.",
+    "userObligations": "User Obligations",
+    "userObligationsDesc": "Users must provide accurate information and comply with laws.",
+    "liability": "Liability",
+    "liabilityDesc": "CryptoXchange is not responsible for losses related to market risks.",
+    "changes": "Changes",
+    "changesDesc": "We reserve the right to change these terms with prior notice."
+  },
+  "language": {
+    "current": "EN",
+    "select": "Select language",
+    "welcome": "Welcome to CryptoXchange exchange service",
+    "welcomeDesc": "To start using our service, click the button below.",
+    "openApp": "Open App"
   }
 } 
