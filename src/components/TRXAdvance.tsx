@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Banknote, MapPin, Phone, Send, Globe, CheckCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -28,6 +29,7 @@ interface FiatOption {
 }
 
 const CryptoFiat: React.FC = () => {
+  const { t, getCountryName, getCities } = useLanguage();
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption | null>(null);
@@ -49,39 +51,39 @@ const CryptoFiat: React.FC = () => {
   const countries: Country[] = [
     {
       code: 'DE',
-      name: 'Германия',
+      name: getCountryName('DE'),
       flag: '🇩🇪',
-      cities: ['Берлин', 'Мюнхен', 'Гамбург', 'Франкфурт', 'Кёльн', 'Дюссельдорф', 'Штутгарт', 'Дортмунд', 'Эссен', 'Лейпциг']
+      cities: getCities('DE')
     },
     {
       code: 'FR',
-      name: 'Франция',
+      name: getCountryName('FR'),
       flag: '🇫🇷',
-      cities: ['Париж', 'Лион', 'Марсель', 'Тулуза', 'Ницца', 'Страсбург', 'Монпелье', 'Бордо', 'Лилль', 'Нант']
+      cities: getCities('FR')
     },
     {
       code: 'IT',
-      name: 'Италия',
+      name: getCountryName('IT'),
       flag: '🇮🇹',
-      cities: ['Рим', 'Милан', 'Неаполь', 'Турин', 'Флоренция', 'Венеция', 'Палермо', 'Генуя', 'Болонья', 'Бари']
+      cities: getCities('IT')
     },
     {
       code: 'ES',
-      name: 'Испания',
+      name: getCountryName('ES'),
       flag: '🇪🇸',
-      cities: ['Мадрид', 'Барселона', 'Валенсия', 'Севилья', 'Бильбао', 'Малага', 'Сарагоса', 'Мурсия', 'Пальма', 'Лас-Пальмас']
+      cities: getCities('ES')
     },
     {
       code: 'PL',
-      name: 'Польша',
+      name: getCountryName('PL'),
       flag: '🇵🇱',
-      cities: ['Варшава', 'Краков', 'Лодзь', 'Вроцлав', 'Познань', 'Гданьск', 'Щецин', 'Быдгощ', 'Люблин', 'Катовице']
+      cities: getCities('PL')
     },
     {
       code: 'UA',
-      name: 'Украина',
+      name: getCountryName('UA'),
       flag: '🇺🇦',
-      cities: ['Киев', 'Харьков', 'Одесса', 'Днепр', 'Донецк', 'Запорожье', 'Львов', 'Кривой Рог', 'Николаев', 'Мариуполь']
+      cities: getCities('UA')
     }
   ];
 

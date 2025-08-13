@@ -414,11 +414,11 @@ const ExchangeInterface: React.FC = () => {
           <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-6 text-center">
             <div className="flex flex-col items-center justify-center">
               <CheckCircle className="w-16 h-16 text-green-400 mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">Обмен успешно завершен!</h3>
-              <p className="text-gray-300 mb-4">Ваши средства успешно отправлены на указанный адрес</p>
+              <h3 className="text-2xl font-bold text-white mb-2">{t('exchange.exchangeCompleted')}</h3>
+              <p className="text-gray-300 mb-4">{t('exchange.fundsSent')}</p>
               
               <div className="bg-gray-800/50 rounded-xl p-4 w-full mb-4">
-                <div className="text-gray-400 text-sm mb-2">Хеш транзакции:</div>
+                <div className="text-gray-400 text-sm mb-2">{t('exchange.transactionHash')}:</div>
                 <div className="flex items-center justify-between">
                   <span className="text-white font-mono text-sm truncate mr-2">{txHash}</span>
                   <a 
@@ -436,7 +436,7 @@ const ExchangeInterface: React.FC = () => {
                 onClick={handleStartNewExchange}
                 className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02]"
               >
-                Начать новый обмен
+                {t('exchange.newExchange')}
               </button>
             </div>
           </div>
@@ -603,9 +603,9 @@ const ExchangeInterface: React.FC = () => {
             <div className="flex items-start space-x-3">
               <Clock className="w-5 h-5 text-red-400 mt-0.5" />
               <div>
-                <h5 className="text-red-400 font-medium">Ожидание оплаты</h5>
+                <h5 className="text-red-400 font-medium">{t('exchange.waitingForPayment')}</h5>
                 <p className="text-gray-300 text-sm mt-1">
-                  У вас есть 1 час для отправки средств. Заявка истекает в {paymentDetails.expirationTime}
+                  {t('exchange.youHave1Hour')} {paymentDetails.expirationTime}
                 </p>
               </div>
             </div>
@@ -613,9 +613,9 @@ const ExchangeInterface: React.FC = () => {
           
           <div className="bg-gray-800/50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-gray-400 text-sm">Отправьте на этот адрес</label>
+              <label className="text-gray-400 text-sm">{t('exchange.sendToThisAddress')}</label>
               <div className="text-xs text-red-400 bg-red-400/10 px-2 py-1 rounded-full">
-                Важно!
+                {t('exchange.important')}
               </div>
             </div>
             
@@ -631,7 +631,7 @@ const ExchangeInterface: React.FC = () => {
                       className="w-24 h-24 sm:w-32 sm:h-32 md:w-28 md:h-28"
                     />
                   </div>
-                  <p className="text-center text-xs text-gray-400 mt-2">Сканируйте для оплаты</p>
+                  <p className="text-center text-xs text-gray-400 mt-2">{t('exchange.scanToPay')}</p>
                 </div>
               )}
               
@@ -646,15 +646,15 @@ const ExchangeInterface: React.FC = () => {
             {/* Предупреждение о точной сумме */}
             <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
               <div className="flex items-center space-x-2">
-                <div className="text-red-400 font-bold text-sm">⚠️ ПЕРЕВОДИТЕ ТОЧНУЮ СУММУ:</div>
+                <div className="text-red-400 font-bold text-sm">⚠️ {t('exchange.sendExactAmount')}</div>
               </div>
               <div className="text-red-300 text-xs mt-1">
-                Переводите именно {paymentDetails.amountToSend} {fromCurrency}. Неточная сумма может привести к потере средств!
+                {t('exchange.sendExactAmountDesc').replace('{amount}', paymentDetails.amountToSend).replace('{currency}', fromCurrency)}
               </div>
             </div>
             <div className="mt-4">
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-400">Сумма к отправке:</span>
+                <span className="text-gray-400">{t('exchange.amountToSend')}:</span>
                 <div className="flex items-center">
                   <span className="text-white font-bold">{paymentDetails.amountToSend}</span>
                   <img 
@@ -665,7 +665,7 @@ const ExchangeInterface: React.FC = () => {
                 </div>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Вы получите:</span>
+                <span className="text-gray-400">{t('exchange.youWillReceive')}:</span>
                 <div className="flex items-center">
                   <span className="text-green-400 font-bold">{paymentDetails.receivingAmount}</span>
                   <img 
@@ -681,11 +681,11 @@ const ExchangeInterface: React.FC = () => {
           <div className="bg-gray-800/30 rounded-xl p-4">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Статус:</span>
-                <span className="text-yellow-400">Ожидание оплаты</span>
+                <span className="text-gray-400">{t('exchange.status')}:</span>
+                <span className="text-yellow-400">{t('exchange.waitingForPayment')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">На адрес:</span>
+                <span className="text-gray-400">{t('exchange.toAddress')}:</span>
                 <span className="text-white truncate max-w-[200px]">{destinationAddress}</span>
               </div>
             </div>
@@ -695,7 +695,7 @@ const ExchangeInterface: React.FC = () => {
             onClick={handleCancel}
             className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 sm:py-4 rounded-xl transition-all duration-300 text-sm sm:text-base"
           >
-            Отменить обмен
+            {t('exchange.cancelExchange')}
           </button>
         </div>
       )}

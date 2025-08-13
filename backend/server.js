@@ -15,22 +15,26 @@ if (TELEGRAM_BOT_TOKEN) {
   bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
   
   // Команда /start с выбором языка
-  bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    
-    const message = '🌐 Выберите язык / Select language:';
-    const inlineKeyboard = [
-      [
-        { text: '🇷🇺 Русский', callback_data: 'lang_ru' },
-        { text: '🇺🇸 English', callback_data: 'lang_en' }
-      ]
-    ];
-    
-    bot.sendMessage(chatId, message, {
-      reply_markup: {
-        inline_keyboard: inlineKeyboard
-      }
-    });
+  bot.onText(/\/start/, async (msg) => {
+    try {
+      const chatId = msg.chat.id;
+      
+      const message = '🌐 Выберите язык / Select language:';
+      const inlineKeyboard = [
+        [
+          { text: '🇷🇺 Русский', callback_data: 'lang_ru' },
+          { text: '🇺🇸 English', callback_data: 'lang_en' }
+        ]
+      ];
+      
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          inline_keyboard: inlineKeyboard
+        }
+      });
+    } catch (error) {
+      console.error('❌ Ошибка в команде /start:', error);
+    }
   });
   
   // Команда для показа всех наценок
@@ -118,15 +122,20 @@ if (TELEGRAM_BOT_TOKEN) {
   });
   
   // Обработка callback запросов
-  bot.on('callback_query', (callbackQuery) => {
-    const message = callbackQuery.message;
-    const data = callbackQuery.data;
+  bot.on('callback_query', async (callbackQuery) => {
+    try {
+      const message = callbackQuery.message;
+      const data = callbackQuery.data;
     
     if (data.startsWith('lang_')) {
       const language = data.replace('lang_', '');
       
       // Удаляем сообщение с выбором языка
-      bot.deleteMessage(message.chat.id, message.message_id);
+      try {
+        await bot.deleteMessage(message.chat.id, message.message_id);
+      } catch (error) {
+        console.log('⚠️ Не удалось удалить сообщение:', error.message);
+      }
       
       // Отправляем приветственное сообщение на выбранном языке
       let welcomeMessage, buttonText;
@@ -145,7 +154,7 @@ if (TELEGRAM_BOT_TOKEN) {
         }]
       ];
       
-      bot.sendMessage(message.chat.id, welcomeMessage, {
+      await bot.sendMessage(message.chat.id, welcomeMessage, {
         reply_markup: {
           inline_keyboard: inlineKeyboard
         }
@@ -171,7 +180,15 @@ if (TELEGRAM_BOT_TOKEN) {
       );
     }
     
-    bot.answerCallbackQuery(callbackQuery.id);
+    await bot.answerCallbackQuery(callbackQuery.id);
+    } catch (error) {
+      console.error('❌ Ошибка в обработке callback_query:', error);
+      try {
+        await bot.answerCallbackQuery(callbackQuery.id, { text: 'Произошла ошибка' });
+      } catch (e) {
+        console.error('❌ Не удалось ответить на callback_query:', e);
+      }
+    }
   });
   
   console.log('✅ Telegram бот инициализирован');

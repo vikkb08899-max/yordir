@@ -61,7 +61,8 @@
     "totalToReceive": "Всего получите:",
     "processing": "Обработка...",
     "error": "Ошибка",
-    "tryAgain": "Попробовать снова"
+    "tryAgain": "Попробовать снова",
+    "fundsSent": "Ваши средства успешно отправлены на указанный адрес"
   },
   "cryptoFiat": {
     "title": "Crypto ⇄ Fiat",
