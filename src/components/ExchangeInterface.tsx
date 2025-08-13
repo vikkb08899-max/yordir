@@ -3,13 +3,15 @@ import { ArrowUpDown, Wallet, TrendingUp, Clock, CheckCircle, ExternalLink, QrCo
 import { createExchangeRequest, checkExchangeStatus, Currency } from '../services/exchangeApi';
 import { useExchangeRates, checkUsdtTransactions } from '../services/ratesService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { ssEstimate, ssCreateExchange, ssGetStatus } from '../services/simpleSwapApi';
+import type { SimpleSwapCurrency } from '../services/simpleSwapApi';
 
 // Интерфейсы для истории сделок
 interface ExchangeHistoryItem {
   id: string;
   requestId: string;
-  fromCurrency: Currency;
-  toCurrency: Currency;
+  fromCurrency: Currency | string;
+  toCurrency: Currency | string;
   fromAmount: number;
   toAmount: number;
   destinationAddress: string;
@@ -21,6 +23,7 @@ interface ExchangeHistoryItem {
   paymentAddress?: string;
   exactAmountToSend?: number;
   expirationTime?: string;
+  provider?: 'internal' | 'simpleswap';
 }
 
 // Импортируем иконки
@@ -37,14 +40,15 @@ const ExchangeInterface: React.FC = () => {
   const { t } = useLanguage();
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const [fromCurrency, setFromCurrency] = useState<Currency>('TRX');
-  const [toCurrency, setToCurrency] = useState<Currency>('USDT');
+  const [fromCurrency, setFromCurrency] = useState<string>('TRX');
+  const [toCurrency, setToCurrency] = useState<string>('USDT');
   const [isSwapped, setIsSwapped] = useState(false);
   const [destinationAddress, setDestinationAddress] = useState('');
   const [exchangeStarted, setExchangeStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [activeProvider, setActiveProvider] = useState<'internal' | 'simpleswap' | null>(null);
   const [exchangeCompleted, setExchangeCompleted] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const { rates, isLoading: ratesLoading, refreshRates } = useExchangeRates();
@@ -61,6 +65,26 @@ const ExchangeInterface: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<ExchangeHistoryItem | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [ssCurrencies, setSsCurrencies] = useState<SimpleSwapCurrency[]>([]);
+  const availableSymbols = React.useMemo(() => {
+    const base = ['TRX','USDT','BTC','ETH','USDC','SOL'];
+    const set = new Set<string>(base);
+    ssCurrencies.forEach((c) => {
+      if (c && c.symbol) set.add(c.symbol.toUpperCase());
+    });
+    return Array.from(set).sort();
+  }, [ssCurrencies]);
+
+  useEffect(() => {
+    import('../services/simpleSwapApi').then(async ({ ssGetCurrencies }) => {
+      try {
+        const cur = await ssGetCurrencies();
+        setSsCurrencies(cur);
+      } catch (e) {
+        console.warn('Не удалось загрузить валюты SimpleSwap:', e);
+      }
+    });
+  }, []);
 
   // Загружаем историю сделок из localStorage
   useEffect(() => {
@@ -95,6 +119,7 @@ const ExchangeInterface: React.FC = () => {
           expirationTime: exchangeData.expirationTime
         });
         setExchangeStarted(true);
+        setActiveProvider(exchangeData.provider || null);
         
         // Генерируем QR код для восстановленного обмена
         if (exchangeData.paymentAddress) {
@@ -121,18 +146,32 @@ const ExchangeInterface: React.FC = () => {
     setIsSwapped(!isSwapped);
   };
 
-  const handleFromAmountChange = (value: string) => {
+  const handleFromAmountChange = async (value: string) => {
     setFromAmount(value);
-    if (value) {
-      // Используем корректные курсы для расчета
-      let calculatedAmount;
-      if (fromCurrency === 'TRX' && toCurrency === 'USDT') {
-        calculatedAmount = (parseFloat(value) * rates.TRX_TO_USDT).toFixed(6);
+    if (!value) {
+      setToAmount('');
+      return;
+    }
+
+    const isTrxUsdtPair =
+      (fromCurrency === 'TRX' && toCurrency === 'USDT') ||
+      (fromCurrency === 'USDT' && toCurrency === 'TRX');
+
+    try {
+      if (isTrxUsdtPair) {
+        let calculatedAmount;
+        if (fromCurrency === 'TRX' && toCurrency === 'USDT') {
+          calculatedAmount = (parseFloat(value) * rates.TRX_TO_USDT).toFixed(6);
+        } else {
+          calculatedAmount = (parseFloat(value) * rates.USDT_TO_TRX).toFixed(6);
+        }
+        setToAmount(calculatedAmount);
       } else {
-        calculatedAmount = (parseFloat(value) * rates.USDT_TO_TRX).toFixed(6);
+        const est = await ssEstimate(fromCurrency, toCurrency, value, false);
+        setToAmount(est.estimated_amount);
       }
-      setToAmount(calculatedAmount);
-    } else {
+    } catch (e: any) {
+      console.error('Ошибка расчета курса:', e);
       setToAmount('');
     }
   };
@@ -142,75 +181,140 @@ const ExchangeInterface: React.FC = () => {
       setError('Пожалуйста, введите корректную сумму');
       return;
     }
-    
-    if (!destinationAddress || destinationAddress.trim().length < 34) {
+
+    if (!destinationAddress || destinationAddress.trim().length < 10) {
       setError('Пожалуйста, введите корректный адрес получателя');
       return;
     }
-    
+
     setError(null);
     setLoading(true);
-    
+
+    const isTrxUsdtPair =
+      (fromCurrency === 'TRX' && toCurrency === 'USDT') ||
+      (fromCurrency === 'USDT' && toCurrency === 'TRX');
+
     try {
-      // Отправляем запрос на создание заявки
-      const response = await createExchangeRequest({
-        from: fromCurrency,
-        to: toCurrency,
-        amount: parseFloat(fromAmount),
-        destinationAddress: destinationAddress.trim()
-      });
-      
-      setRequestId(response.requestId);
-      
-      // Устанавливаем данные для оплаты
-      setPaymentDetails({
-        walletAddress: response.paymentDetails.address,
-        amountToSend: response.paymentDetails.amount.toString(),
-        receivingAmount: response.paymentDetails.toReceive,
-        expirationTime: new Date(response.paymentDetails.expirationTime).toLocaleTimeString()
-      });
+      if (isTrxUsdtPair) {
+        // Внутренний провайдер (как было)
+        const response = await createExchangeRequest({
+          from: fromCurrency,
+          to: toCurrency,
+          amount: parseFloat(fromAmount),
+          destinationAddress: destinationAddress.trim()
+        });
 
-      // Генерируем QR код для адреса
-      await generateQRCode(response.paymentDetails.address);
-      
-      setExchangeStarted(true);
-      setExchangeCompleted(false);
-      setTxHash(null);
-      setTimeLeft(30 * 60); // Сбрасываем таймер на 30 минут
+        setRequestId(response.requestId);
+        setActiveProvider('internal');
 
-      // Создаем запись для истории
-      const historyItem: ExchangeHistoryItem = {
-        id: Date.now().toString(),
-        requestId: response.requestId,
-        fromCurrency,
-        toCurrency,
-        fromAmount: parseFloat(fromAmount),
-        toAmount: parseFloat(response.paymentDetails.toReceive),
-        destinationAddress: destinationAddress.trim(),
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        paymentAddress: response.paymentDetails.address,
-        exactAmountToSend: response.paymentDetails.amount,
-        expirationTime: response.paymentDetails.expirationTime
-      };
+        setPaymentDetails({
+          walletAddress: response.paymentDetails.address,
+          amountToSend: response.paymentDetails.amount.toString(),
+          receivingAmount: response.paymentDetails.toReceive,
+          expirationTime: new Date(response.paymentDetails.expirationTime).toLocaleTimeString()
+        });
 
-      // Добавляем в историю
-      addToHistory(historyItem);
+        await generateQRCode(response.paymentDetails.address);
 
-      // Сохраняем активный обмен в localStorage
-      const exchangeData = {
-        requestId: response.requestId,
-        fromCurrency,
-        toCurrency,
-        fromAmount: parseFloat(fromAmount),
-        toAmount: parseFloat(response.paymentDetails.toReceive),
-        destinationAddress: destinationAddress.trim(),
-        paymentAddress: response.paymentDetails.address,
-        exactAmountToSend: response.paymentDetails.amount,
-        expirationTime: response.paymentDetails.expirationTime,
-        createdAt: new Date().toISOString()
-      };
-      localStorage.setItem('activeExchange', JSON.stringify(exchangeData));
+        setExchangeStarted(true);
+        setExchangeCompleted(false);
+        setTxHash(null);
+        setTimeLeft(30 * 60);
+
+        const historyItem: ExchangeHistoryItem = {
+          id: Date.now().toString(),
+          requestId: response.requestId,
+          fromCurrency,
+          toCurrency,
+          fromAmount: parseFloat(fromAmount),
+          toAmount: parseFloat(response.paymentDetails.toReceive),
+          destinationAddress: destinationAddress.trim(),
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          paymentAddress: response.paymentDetails.address,
+          exactAmountToSend: response.paymentDetails.amount,
+          expirationTime: response.paymentDetails.expirationTime,
+          provider: 'internal'
+        };
+        addToHistory(historyItem);
+
+        const exchangeData = {
+          requestId: response.requestId,
+          fromCurrency,
+          toCurrency,
+          fromAmount: parseFloat(fromAmount),
+          toAmount: parseFloat(response.paymentDetails.toReceive),
+          destinationAddress: destinationAddress.trim(),
+          paymentAddress: response.paymentDetails.address,
+          exactAmountToSend: response.paymentDetails.amount,
+          expirationTime: response.paymentDetails.expirationTime,
+          createdAt: new Date().toISOString(),
+          provider: 'internal'
+        };
+        localStorage.setItem('activeExchange', JSON.stringify(exchangeData));
+      } else {
+        // SimpleSwap провайдер
+        const createResp = await ssCreateExchange({
+          currency_from: fromCurrency,
+          currency_to: toCurrency,
+          amount: parseFloat(fromAmount),
+          address_to: destinationAddress.trim(),
+          fixed: false
+        });
+
+        const ss = createResp.exchange;
+        const payinAddress = ss.payin_address || '';
+        const toReceive = toAmount || ss.amount_to || '';
+
+        setRequestId(ss.id);
+        setActiveProvider('simpleswap');
+
+        setPaymentDetails({
+          walletAddress: payinAddress,
+          amountToSend: fromAmount,
+          receivingAmount: String(toReceive),
+          expirationTime: new Date(Date.now() + 30 * 60 * 1000).toLocaleTimeString()
+        });
+
+        if (payinAddress) await generateQRCode(payinAddress);
+
+        setExchangeStarted(true);
+        setExchangeCompleted(false);
+        setTxHash(null);
+        setTimeLeft(30 * 60);
+
+        const historyItem: ExchangeHistoryItem = {
+          id: Date.now().toString(),
+          requestId: ss.id,
+          fromCurrency,
+          toCurrency,
+          fromAmount: parseFloat(fromAmount),
+          toAmount: parseFloat(String(toReceive)) || 0,
+          destinationAddress: destinationAddress.trim(),
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          paymentAddress: payinAddress,
+          exactAmountToSend: parseFloat(fromAmount),
+          expirationTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          provider: 'simpleswap'
+        };
+        addToHistory(historyItem);
+
+        const exchangeData = {
+          requestId: ss.id,
+          fromCurrency,
+          toCurrency,
+          fromAmount: parseFloat(fromAmount),
+          toAmount: parseFloat(String(toReceive)) || 0,
+          destinationAddress: destinationAddress.trim(),
+          paymentAddress: payinAddress,
+          exactAmountToSend: parseFloat(fromAmount),
+          expirationTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+          provider: 'simpleswap'
+        };
+        localStorage.setItem('activeExchange', JSON.stringify(exchangeData));
+      }
     } catch (err: any) {
       setError(err.message || 'Произошла ошибка при создании заявки');
     } finally {
@@ -405,57 +509,73 @@ const ExchangeInterface: React.FC = () => {
   // Проверка статуса обмена каждые 10 секунд
   useEffect(() => {
     let interval: number | undefined;
-    
+
     if (exchangeStarted && requestId) {
       interval = window.setInterval(async () => {
         try {
-          const statusResponse = await checkExchangeStatus(requestId);
-          
-          if (statusResponse.request.status === 'completed') {
-            setError(null);
-            // Сохраняем хэш транзакции и устанавливаем статус обмена как завершенный
-            setTxHash(statusResponse.request.txHash);
-            setExchangeCompleted(true);
-            setExchangeStarted(false);
-            
-            // Очищаем активный обмен из localStorage
-            localStorage.removeItem('activeExchange');
-            
-            // Обновляем статус в истории
-            const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
-            if (activeItem) {
-              updateHistoryItem(activeItem.id, {
-                status: 'completed',
-                completedAt: new Date().toISOString(),
-                txHash: statusResponse.request.txHash || undefined
-              });
+          if (activeProvider === 'simpleswap') {
+            const statusData = await ssGetStatus(requestId);
+            const status = statusData && (statusData.status || statusData.state || '').toLowerCase();
+            if (status === 'finished' || status === 'completed' || status === 'success') {
+              setError(null);
+              setExchangeCompleted(true);
+              setExchangeStarted(false);
+              localStorage.removeItem('activeExchange');
+              const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+              if (activeItem) {
+                updateHistoryItem(activeItem.id, {
+                  status: 'completed',
+                  completedAt: new Date().toISOString(),
+                  txHash: statusData.txid || statusData.tx_hash || undefined
+                });
+              }
+            } else if (status === 'expired') {
+              setError('Время ожидания платежа истекло');
+              setExchangeStarted(false);
+              const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+              if (activeItem) {
+                updateHistoryItem(activeItem.id, { status: 'expired' });
+              }
             }
-          } else if (statusResponse.request.status === 'expired') {
-            setError('Время ожидания платежа истекло');
-            setExchangeStarted(false);
-            
-            // Обновляем статус в истории
-            const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
-            if (activeItem) {
-              updateHistoryItem(activeItem.id, {
-                status: 'expired'
-              });
+          } else {
+            const statusResponse = await checkExchangeStatus(requestId);
+            if (statusResponse.request.status === 'completed') {
+              setError(null);
+              setTxHash(statusResponse.request.txHash);
+              setExchangeCompleted(true);
+              setExchangeStarted(false);
+              localStorage.removeItem('activeExchange');
+              const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+              if (activeItem) {
+                updateHistoryItem(activeItem.id, {
+                  status: 'completed',
+                  completedAt: new Date().toISOString(),
+                  txHash: statusResponse.request.txHash || undefined
+                });
+              }
+            } else if (statusResponse.request.status === 'expired') {
+              setError('Время ожидания платежа истекло');
+              setExchangeStarted(false);
+              const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+              if (activeItem) {
+                updateHistoryItem(activeItem.id, { status: 'expired' });
+              }
+            } else if (statusResponse.request.status === 'error') {
+              setError('Произошла ошибка при обработке платежа');
             }
-          } else if (statusResponse.request.status === 'error') {
-            setError('Произошла ошибка при обработке платежа');
           }
         } catch (err) {
           console.error('Ошибка при проверке статуса:', err);
         }
       }, 10000);
     }
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
       }
     };
-  }, [exchangeStarted, requestId]);
+  }, [exchangeStarted, requestId, activeProvider]);
   
   // Обработчик горячих клавиш для отладки
   useEffect(() => {
@@ -496,7 +616,7 @@ const ExchangeInterface: React.FC = () => {
   }, [requestId, fromCurrency, exchangeStarted]);
 
   // Функция для получения иконки валюты
-  const getCurrencyIcon = (currency: Currency) => {
+  const getCurrencyIcon = (currency: Currency | string) => {
     switch (currency) {
       case 'TRX':
         return trxIcon;
@@ -587,7 +707,19 @@ const ExchangeInterface: React.FC = () => {
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <div className="flex items-center justify-between mb-3">
               <label className="text-gray-400 text-sm">{t('exchange.from')}</label>
-              <span className="text-gray-400 text-sm">{fromCurrency}</span>
+              <select
+                value={fromCurrency}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setFromCurrency(val);
+                  if (fromAmount) await handleFromAmountChange(fromAmount);
+                }}
+                className="bg-gray-900/60 text-gray-200 text-sm rounded-md px-2 py-1 border border-gray-700/50"
+              >
+                {availableSymbols.map((sym) => (
+                  <option key={sym} value={sym}>{sym}</option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
@@ -624,7 +756,19 @@ const ExchangeInterface: React.FC = () => {
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <div className="flex items-center justify-between mb-3">
               <label className="text-gray-400 text-sm">{t('exchange.to')}</label>
-              <span className="text-gray-400 text-sm">{toCurrency}</span>
+              <select
+                value={toCurrency}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setToCurrency(val);
+                  if (fromAmount) await handleFromAmountChange(fromAmount);
+                }}
+                className="bg-gray-900/60 text-gray-200 text-sm rounded-md px-2 py-1 border border-gray-700/50"
+              >
+                {availableSymbols.map((sym) => (
+                  <option key={sym} value={sym}>{sym}</option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
@@ -669,11 +813,24 @@ const ExchangeInterface: React.FC = () => {
               <img src={getCurrencyIcon(fromCurrency)} alt={fromCurrency} className="w-4 h-4 mr-1" />
               <span className="text-white font-medium">=</span>
               <span className="text-white font-medium mx-1">
-                {
-                  fromCurrency === 'TRX' ? 
-                    rates.TRX_TO_USDT.toFixed(6) : 
-                    rates.USDT_TO_TRX.toFixed(6)
-                }
+                {(
+                  () => {
+                    const isTrxUsdtPair =
+                      (fromCurrency === 'TRX' && toCurrency === 'USDT') ||
+                      (fromCurrency === 'USDT' && toCurrency === 'TRX');
+                    if (isTrxUsdtPair) {
+                      return (fromCurrency === 'TRX' ? rates.TRX_TO_USDT.toFixed(6) : rates.USDT_TO_TRX.toFixed(6)) as unknown as React.ReactNode;
+                    }
+                    if (fromAmount && toAmount) {
+                      const f = parseFloat(fromAmount);
+                      const t = parseFloat(toAmount);
+                      if (f > 0 && !Number.isNaN(t)) {
+                        return ((t / f).toFixed(6)) as unknown as React.ReactNode;
+                      }
+                    }
+                    return '-' as unknown as React.ReactNode;
+                  }
+                )()}
               </span>
               <img src={getCurrencyIcon(toCurrency)} alt={toCurrency} className="w-4 h-4" />
               {ratesLoading && <span className="text-xs text-blue-400 ml-2">(Обновляется...)</span>}
@@ -859,10 +1016,10 @@ const ExchangeInterface: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <img src={getCurrencyIcon(item.fromCurrency)} alt={item.fromCurrency} className="w-6 h-6" />
+                      <img src={getCurrencyIcon(item.fromCurrency as Currency | string)} alt={String(item.fromCurrency)} className="w-6 h-6" />
                       <span className="text-white font-medium">{item.fromAmount}</span>
                       <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                      <img src={getCurrencyIcon(item.toCurrency)} alt={item.toCurrency} className="w-6 h-6" />
+                      <img src={getCurrencyIcon(item.toCurrency as Currency | string)} alt={String(item.toCurrency)} className="w-6 h-6" />
                       <span className="text-white font-medium">{item.toAmount}</span>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -921,15 +1078,15 @@ const ExchangeInterface: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-center space-x-4 mb-4">
                   <div className="text-center">
-                    <img src={getCurrencyIcon(selectedHistoryItem.fromCurrency)} alt={selectedHistoryItem.fromCurrency} className="w-8 h-8 mx-auto mb-2" />
+                    <img src={getCurrencyIcon(selectedHistoryItem.fromCurrency as Currency | string)} alt={String(selectedHistoryItem.fromCurrency)} className="w-8 h-8 mx-auto mb-2" />
                     <span className="text-white font-bold">{selectedHistoryItem.fromAmount}</span>
-                    <div className="text-gray-400 text-sm">{selectedHistoryItem.fromCurrency}</div>
+                    <div className="text-gray-400 text-sm">{String(selectedHistoryItem.fromCurrency)}</div>
                   </div>
                   <ArrowUpDown className="w-6 h-6 text-gray-400" />
                   <div className="text-center">
-                    <img src={getCurrencyIcon(selectedHistoryItem.toCurrency)} alt={selectedHistoryItem.toCurrency} className="w-8 h-8 mx-auto mb-2" />
+                    <img src={getCurrencyIcon(selectedHistoryItem.toCurrency as Currency | string)} alt={String(selectedHistoryItem.toCurrency)} className="w-8 h-8 mx-auto mb-2" />
                     <span className="text-white font-bold">{selectedHistoryItem.toAmount}</span>
-                    <div className="text-gray-400 text-sm">{selectedHistoryItem.toCurrency}</div>
+                    <div className="text-gray-400 text-sm">{String(selectedHistoryItem.toCurrency)}</div>
                   </div>
                 </div>
               </div>
