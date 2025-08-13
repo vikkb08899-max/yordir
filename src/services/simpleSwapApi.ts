@@ -135,35 +135,54 @@ export async function ssGetStatus(id: string) {
 
 // ===== SimpleSwap Public API v3 =====
 export async function ssV3GetCurrencies() {
-	const resp = await fetch(`${API_URL}/simpleswap/v3/currencies`);
-	const data = await parseJsonOrThrow(resp);
-	if (!data.success) throw new Error(data.error || 'Ошибка загрузки валют v3');
-	return data.currencies as Array<{ ticker: string; network?: string; name?: string; }>;
+	try {
+		const resp = await fetch(`${API_URL}/simpleswap/v3/currencies`);
+		const data = await parseJsonOrThrow(resp);
+		if (!data.success) throw new Error(data.error || 'Ошибка загрузки валют v3');
+		return (Array.isArray(data.currencies) ? data.currencies : []) as Array<{ ticker: string; network?: string; name?: string; }>;
+	} catch (e) {
+		console.warn('ssV3GetCurrencies error:', e);
+		return [];
+	}
 }
 
 export async function ssV3GetPairsAll() {
-	const resp = await fetch(`${API_URL}/simpleswap/v3/pairs-all`);
-	const data = await parseJsonOrThrow(resp);
-	if (!data.success) throw new Error(data.error || 'Ошибка загрузки пар v3');
-	return data.pairs as Array<{ from: { ticker: string; network?: string }, to: { ticker: string; network?: string } } | string[]>;
+	try {
+		const resp = await fetch(`${API_URL}/simpleswap/v3/pairs-all`);
+		const data = await parseJsonOrThrow(resp);
+		if (!data.success) throw new Error(data.error || 'Ошибка загрузки пар v3');
+		return data.pairs as Array<{ from: { ticker: string; network?: string }, to: { ticker: string; network?: string } } | string[]>;
+	} catch (e) {
+		console.warn('ssV3GetPairsAll error:', e);
+		return [] as any;
+	}
 }
 
 export async function ssV3GetPairsFor(ticker: string, network?: string) {
-	const qs = new URLSearchParams({ ticker }).toString();
-	const url = `${API_URL}/simpleswap/v3/pairs-for?${network ? `ticker=${encodeURIComponent(ticker)}&network=${encodeURIComponent(network)}` : `ticker=${encodeURIComponent(ticker)}`}`;
-	const resp = await fetch(url);
-	const data = await parseJsonOrThrow(resp);
-	if (!data.success) throw new Error(data.error || 'Ошибка загрузки пар v3');
-	return data.pairs as string[];
+	try {
+		const url = `${API_URL}/simpleswap/v3/pairs-for?${network ? `ticker=${encodeURIComponent(ticker)}&network=${encodeURIComponent(network)}` : `ticker=${encodeURIComponent(ticker)}`}`;
+		const resp = await fetch(url);
+		const data = await parseJsonOrThrow(resp);
+		if (!data.success) throw new Error(data.error || 'Ошибка загрузки пар v3');
+		return Array.isArray(data.pairs) ? (data.pairs as string[]) : [];
+	} catch (e) {
+		console.warn('ssV3GetPairsFor error:', e);
+		return [];
+	}
 }
 
 export async function ssV3Estimate(body: { from: { ticker: string; network?: string }, to: { ticker: string; network?: string }, amount?: string }) {
-	const resp = await fetch(`${API_URL}/simpleswap/v3/estimates`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
-	const data = await parseJsonOrThrow(resp);
-	if (!data.success) throw new Error(data.error || 'Ошибка оценки v3');
-	return data.estimate;
+	try {
+		const resp = await fetch(`${API_URL}/simpleswap/v3/estimates`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body)
+		});
+		const data = await parseJsonOrThrow(resp);
+		if (!data.success) throw new Error(data.error || 'Ошибка оценки v3');
+		return data.estimate;
+	} catch (e) {
+		console.warn('ssV3Estimate error:', e);
+		return null as any;
+	}
 } 
