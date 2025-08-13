@@ -115,12 +115,9 @@ const CryptoFiat: React.FC = () => {
     { symbol: 'USDC', name: 'USD Coin', icon: usdcIcon }
   ];
 
-  // Доступные фиатные валюты
+  // Доступные фиатные валюты (только EUR)
   const fiatOptions: FiatOption[] = [
-    { symbol: 'EUR', name: 'Евро', icon: '€' },
-    { symbol: 'USD', name: 'Доллар США', icon: '$' },
-    { symbol: 'PLN', name: 'Польский злотый', icon: 'zł' },
-    { symbol: 'UAH', name: 'Украинская гривна', icon: '₴' }
+    { symbol: 'EUR', name: 'Евро', icon: '€' }
   ];
 
   // Функция для получения курса и расчета суммы
@@ -132,13 +129,7 @@ const CryptoFiat: React.FC = () => {
       return;
     }
 
-    // Если выбранная фиатная валюта не EUR, показываем "курс уточняйте у менеджера"
-    if (selectedFiat?.symbol !== 'EUR') {
-      setCalculatedAmount('Курс уточняйте у менеджера');
-      setExchangeRate(0);
-      setMargin(0);
-      return;
-    }
+
 
     try {
       const fromSymbol = exchangeType === 'crypto-to-fiat' ? selectedCrypto.symbol : selectedFiat.symbol;
@@ -241,7 +232,7 @@ const CryptoFiat: React.FC = () => {
 
   if (requestSubmitted) {
     return (
-      <div id="crypto-fiat" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-6">
+      <div id="crypto-fiat" className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 h-full">
         <div className="text-center">
           <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
           <h3 className="text-2xl font-bold text-white mb-2">Заявка отправлена!</h3>
@@ -249,7 +240,7 @@ const CryptoFiat: React.FC = () => {
             Ваша заявка на обмен {exchangeType === 'crypto-to-fiat' ? 'криптовалюты на наличные' : 'наличных на криптовалюту'} 
             получена. Мы свяжемся с вами в ближайшее время через указанный контакт.
           </p>
-          <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 mb-6">
             <div className="text-sm text-gray-400 space-y-1">
               <div>Страна: <span className="text-white">{selectedCountry?.name}</span></div>
               <div>Город: <span className="text-white">{selectedCity}</span></div>
@@ -275,7 +266,7 @@ const CryptoFiat: React.FC = () => {
   }
 
   return (
-    <div id="crypto-fiat" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-6">
+    <div id="crypto-fiat" className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 h-full">
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
           <Banknote className="w-5 h-5 text-red-400" />
@@ -296,7 +287,7 @@ const CryptoFiat: React.FC = () => {
               className={`p-3 rounded-lg text-sm font-medium transition-colors ${
                 exchangeType === 'crypto-to-fiat'
                   ? 'bg-red-500 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  : 'bg-white/10 backdrop-blur-lg text-gray-300 hover:text-white hover:bg-white/20 border border-white/20'
               }`}
             >
               Crypto → Fiat
@@ -306,7 +297,7 @@ const CryptoFiat: React.FC = () => {
               className={`p-3 rounded-lg text-sm font-medium transition-colors ${
                 exchangeType === 'fiat-to-crypto'
                   ? 'bg-red-500 text-white'
-                  : 'bg-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  : 'bg-white/10 backdrop-blur-lg text-gray-300 hover:text-white hover:bg-white/20 border border-white/20'
               }`}
             >
               Fiat → Crypto
@@ -317,25 +308,22 @@ const CryptoFiat: React.FC = () => {
         {/* Выбор страны */}
         <div>
           <label className="block text-gray-400 text-sm mb-3">Страна</label>
-          <div className="grid grid-cols-1 gap-2">
+          <select
+            value={selectedCountry?.code || ''}
+            onChange={(e) => {
+              const country = countries.find(c => c.code === e.target.value);
+              setSelectedCountry(country || null);
+              setSelectedCity(''); // Сбрасываем город при смене страны
+            }}
+            className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
+          >
+            <option value="">Выберите страну</option>
             {countries.map((country) => (
-              <button
-                key={country.code}
-                onClick={() => {
-                  setSelectedCountry(country);
-                  setSelectedCity(''); // Сбрасываем город при смене страны
-                }}
-                className={`flex items-center space-x-3 p-3 rounded-lg text-sm transition-colors ${
-                  selectedCountry?.code === country.code
-                    ? 'bg-red-500 text-white'
-                    : 'bg-gray-800/50 text-gray-300 hover:text-white hover:bg-gray-700/50'
-                }`}
-              >
-                <span className="text-lg">{country.flag}</span>
-                <span>{country.name}</span>
-              </button>
+              <option key={country.code} value={country.code} className="bg-gray-800 text-white">
+                {country.flag} {country.name}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Выбор города */}
@@ -345,7 +333,7 @@ const CryptoFiat: React.FC = () => {
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full bg-gray-800/50 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
             >
               <option value="">Выберите город</option>
               {selectedCountry.cities.map((city) => (
@@ -369,7 +357,7 @@ const CryptoFiat: React.FC = () => {
                     className={`flex items-center space-x-2 p-3 rounded-lg text-sm transition-colors ${
                       selectedCrypto?.symbol === crypto.symbol
                         ? 'bg-red-500 text-white'
-                        : 'bg-gray-800/50 text-gray-300 hover:text-white hover:bg-gray-700/50'
+                        : 'bg-white/10 backdrop-blur-lg text-gray-300 hover:text-white hover:bg-white/20 border border-white/20'
                     }`}
                   >
                     <img src={crypto.icon} alt={crypto.symbol} className="w-5 h-5" />
@@ -395,9 +383,6 @@ const CryptoFiat: React.FC = () => {
                   >
                     <span className="text-lg">{fiat.icon}</span>
                     <span>{fiat.symbol}</span>
-                    {fiat.symbol !== 'EUR' && (
-                      <span className="text-xs text-yellow-400 ml-auto">Курс уточняйте</span>
-                    )}
                   </button>
                 ))}
               </div>
@@ -421,9 +406,6 @@ const CryptoFiat: React.FC = () => {
                   >
                     <span className="text-lg">{fiat.icon}</span>
                     <span>{fiat.symbol}</span>
-                    {fiat.symbol !== 'EUR' && (
-                      <span className="text-xs text-yellow-400 ml-auto">Курс уточняйте</span>
-                    )}
                   </button>
                 ))}
               </div>
@@ -440,7 +422,7 @@ const CryptoFiat: React.FC = () => {
                     className={`flex items-center space-x-2 p-3 rounded-lg text-sm transition-colors ${
                       selectedCrypto?.symbol === crypto.symbol
                         ? 'bg-red-500 text-white'
-                        : 'bg-gray-800/50 text-gray-300 hover:text-white hover:bg-gray-700/50'
+                        : 'bg-white/10 backdrop-blur-lg text-gray-300 hover:text-white hover:bg-white/20 border border-white/20'
                     }`}
                   >
                     <img src={crypto.icon} alt={crypto.symbol} className="w-5 h-5" />
@@ -457,7 +439,7 @@ const CryptoFiat: React.FC = () => {
           <label className="block text-gray-400 text-sm mb-3">
             Сумма {exchangeType === 'crypto-to-fiat' ? selectedCrypto?.symbol || 'криптовалюты' : selectedFiat?.symbol || 'фиата'}
           </label>
-          <div className="bg-gray-800/50 rounded-xl p-4">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <input
               type="number"
               placeholder="0.00"
@@ -478,16 +460,16 @@ const CryptoFiat: React.FC = () => {
               <span className="text-gray-400 text-sm">
                 {exchangeType === 'crypto-to-fiat' ? 'Вы получите' : 'Вам потребуется'}
               </span>
-              {margin > 0 && selectedFiat?.symbol === 'EUR' && (
+              {margin > 0 && (
                 <span className="text-red-400 text-xs bg-red-400/10 px-2 py-1 rounded-full">
                   Наценка: {margin}%
                 </span>
               )}
             </div>
-            <div className={`text-2xl font-bold ${selectedFiat?.symbol === 'EUR' ? 'text-green-400' : 'text-yellow-400'}`}>
-              {calculatedAmount} {selectedFiat?.symbol !== 'EUR' ? '' : (exchangeType === 'crypto-to-fiat' ? selectedFiat?.symbol : selectedCrypto?.symbol)}
+            <div className="text-2xl font-bold text-green-400">
+              {calculatedAmount} {exchangeType === 'crypto-to-fiat' ? selectedFiat?.symbol : selectedCrypto?.symbol}
             </div>
-            {exchangeRate > 0 && selectedFiat?.symbol === 'EUR' && (
+            {exchangeRate > 0 && (
               <div className="text-xs text-gray-500 mt-1">
                 Курс: 1 {exchangeType === 'crypto-to-fiat' ? selectedCrypto?.symbol : selectedFiat?.symbol} = {exchangeRate.toFixed(6)} {exchangeType === 'crypto-to-fiat' ? selectedFiat?.symbol : selectedCrypto?.symbol}
               </div>
@@ -509,7 +491,7 @@ const CryptoFiat: React.FC = () => {
                 placeholder="@username"
                 value={contactInfo.telegram}
                 onChange={(e) => setContactInfo({...contactInfo, telegram: e.target.value})}
-                className="w-full bg-gray-800/50 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-white/20"
               />
             </div>
             <div>
@@ -522,7 +504,7 @@ const CryptoFiat: React.FC = () => {
                 placeholder="+1234567890"
                 value={contactInfo.whatsapp}
                 onChange={(e) => setContactInfo({...contactInfo, whatsapp: e.target.value})}
-                className="w-full bg-gray-800/50 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 border border-white/20"
               />
             </div>
             <div>
@@ -533,7 +515,7 @@ const CryptoFiat: React.FC = () => {
                   className={`flex-1 p-2 rounded-lg text-sm transition-colors ${
                     contactInfo.preferredContact === 'telegram'
                       ? 'bg-blue-500 text-white'
-                      : 'bg-gray-800/50 text-gray-400 hover:text-white'
+                      : 'bg-white/10 backdrop-blur-lg text-gray-300 hover:text-white hover:bg-white/20 border border-white/20'
                   }`}
                 >
                   Telegram
@@ -543,7 +525,7 @@ const CryptoFiat: React.FC = () => {
                   className={`flex-1 p-2 rounded-lg text-sm transition-colors ${
                     contactInfo.preferredContact === 'whatsapp'
                       ? 'bg-green-500 text-white'
-                      : 'bg-gray-800/50 text-gray-400 hover:text-white'
+                      : 'bg-white/10 backdrop-blur-lg text-gray-300 hover:text-white hover:bg-white/20 border border-white/20'
                   }`}
                 >
                   WhatsApp
@@ -577,7 +559,7 @@ const CryptoFiat: React.FC = () => {
               : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
           } text-white font-bold py-4 rounded-xl transition-all duration-300 transform ${
             !loading && calculatedAmount && 'hover:scale-[1.02]'
-          } flex items-center justify-center space-x-2`}
+          } flex items-center justify-center space-x-2 shadow-lg`}
         >
           <Send className="w-5 h-5" />
           <span>{loading ? 'Отправка...' : 'Отправить заявку'}</span>

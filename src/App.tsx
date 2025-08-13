@@ -96,12 +96,28 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
-      {/* Пульсирующий фон */}
-      <div className="absolute inset-0">
+        {/* Динамический фон */}
+        <div className="absolute inset-0">
+          {/* Анимированные градиенты */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-blue-500/10 animate-pulse"></div>
+          <div className="absolute inset-0 bg-gradient-to-tl from-purple-500/5 via-transparent to-green-500/5 animate-pulse" style={{animationDelay: '2s'}}></div>
+          
+          {/* Плавающие частицы */}
+          <div className="absolute inset-0">
+            <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-red-400/30 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+            <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-blue-400/40 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-purple-400/35 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
+            <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-green-400/30 rounded-full animate-bounce" style={{animationDelay: '3s'}}></div>
+          </div>
+          
+          {/* Волновой эффект */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-800/20 to-transparent"></div>
+        </div>
+        
+        {/* Дополнительные анимированные элементы */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-      </div>
       <div className="relative z-10">
         <Header />
         
