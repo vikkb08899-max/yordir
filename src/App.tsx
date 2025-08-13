@@ -49,42 +49,42 @@ function HomePage() {
         {/* Features Grid - moved here */}
         <section className="w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 hover:border-red-500/30 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
-                <TrendingUp className="w-6 h-6 text-red-400" />
+            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-blue-500/50 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-500/30 transition-colors">
+                <TrendingUp className="w-6 h-6 text-blue-400" />
               </div>
               <h3 className="text-white font-bold text-lg mb-2">Global Coverage</h3>
-              <p className="text-gray-400 text-sm">
+              <p className="text-slate-300 text-sm">
                 Operating in major cities worldwide with local payment methods and support
               </p>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 hover:border-red-500/30 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
-                <RefreshCw className="w-6 h-6 text-red-400" />
+            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-emerald-500/50 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500/30 transition-colors">
+                <RefreshCw className="w-6 h-6 text-emerald-400" />
               </div>
               <h3 className="text-white font-bold text-lg mb-2">Instant Exchange</h3>
-              <p className="text-gray-400 text-sm">
+              <p className="text-slate-300 text-sm">
                 Lightning-fast crypto exchanges with real-time rates and minimal fees
               </p>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 hover:border-red-500/30 transition-all duration-300 group">
+            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-red-500/50 transition-all duration-300 group">
               <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
                 <Shield className="w-6 h-6 text-red-400" />
               </div>
               <h3 className="text-white font-bold text-lg mb-2">Bank-Grade Security</h3>
-              <p className="text-gray-400 text-sm">
+              <p className="text-slate-300 text-sm">
                 99.9% uptime, cold storage, and 24/7 monitoring for maximum security
               </p>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 hover:border-red-500/30 transition-all duration-300 group">
-              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
-                <Zap className="w-6 h-6 text-red-400" />
+            <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl p-6 hover:border-cyan-500/50 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-cyan-500/30 transition-colors">
+                <Zap className="w-6 h-6 text-cyan-400" />
               </div>
               <h3 className="text-white font-bold text-lg mb-2">Smart Trading</h3>
-              <p className="text-gray-400 text-sm">
+              <p className="text-slate-300 text-sm">
                 Advanced algorithms for optimal rates and automated portfolio management
               </p>
             </div>
@@ -99,29 +99,44 @@ function App() {
   return (
     <LanguageProvider>
       <Router>
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-black to-slate-900 relative overflow-hidden">
         {/* Динамический фон */}
         <div className="absolute inset-0">
-          {/* Анимированные градиенты */}
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-blue-500/10 animate-pulse"></div>
-          <div className="absolute inset-0 bg-gradient-to-tl from-purple-500/5 via-transparent to-green-500/5 animate-pulse" style={{animationDelay: '2s'}}></div>
+          {/* Темный базовый фон */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-black to-slate-900"></div>
+          
+          {/* Темно-синие импульсы */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-indigo-900/15 animate-pulse" style={{animationDuration: '4s'}}></div>
+          <div className="absolute inset-0 bg-gradient-to-tl from-blue-800/10 via-transparent to-cyan-900/10 animate-pulse" style={{animationDelay: '2s', animationDuration: '6s'}}></div>
+          
+          {/* Зеленые импульсы */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/15 via-transparent to-green-900/10 animate-pulse" style={{animationDelay: '1s', animationDuration: '5s'}}></div>
+          <div className="absolute inset-0 bg-gradient-to-tl from-teal-900/10 via-transparent to-emerald-800/8 animate-pulse" style={{animationDelay: '3s', animationDuration: '7s'}}></div>
+          
+          {/* Красные импульсы */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-900/12 via-transparent to-rose-900/8 animate-pulse" style={{animationDelay: '0.5s', animationDuration: '4.5s'}}></div>
+          <div className="absolute inset-0 bg-gradient-to-tl from-red-800/8 via-transparent to-pink-900/6 animate-pulse" style={{animationDelay: '2.5s', animationDuration: '6.5s'}}></div>
           
           {/* Плавающие частицы */}
           <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-red-400/30 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-            <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-blue-400/40 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-            <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-purple-400/35 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
-            <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-green-400/30 rounded-full animate-bounce" style={{animationDelay: '3s'}}></div>
+            <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-500/40 rounded-full animate-bounce" style={{animationDelay: '0s', animationDuration: '3s'}}></div>
+            <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-emerald-500/50 rounded-full animate-bounce" style={{animationDelay: '1s', animationDuration: '2.5s'}}></div>
+            <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-red-500/45 rounded-full animate-bounce" style={{animationDelay: '2s', animationDuration: '3.5s'}}></div>
+            <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-cyan-500/40 rounded-full animate-bounce" style={{animationDelay: '3s', animationDuration: '2.8s'}}></div>
+            <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-indigo-500/35 rounded-full animate-bounce" style={{animationDelay: '1.5s', animationDuration: '4s'}}></div>
+            <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-teal-500/45 rounded-full animate-bounce" style={{animationDelay: '2.5s', animationDuration: '3.2s'}}></div>
           </div>
           
           {/* Волновой эффект */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-800/20 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-800/30 to-transparent"></div>
         </div>
         
-        {/* Дополнительные анимированные элементы */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        {/* Анимированные размытые круги */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-900/20 rounded-full blur-3xl animate-pulse" style={{animationDuration: '8s'}}></div>
+        <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-emerald-900/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s', animationDuration: '10s' }}></div>
+        <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-red-900/12 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s', animationDuration: '9s' }}></div>
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-indigo-900/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s', animationDuration: '11s' }}></div>
+        <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-cyan-900/8 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '3s', animationDuration: '7s' }}></div>
       <div className="relative z-10">
         <Header />
         
