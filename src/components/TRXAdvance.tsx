@@ -190,9 +190,11 @@ const CryptoFiat: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        setExchangeRate(data.finalRate);
+        // Показываем базовый рыночный курс (без наценки)
+        setExchangeRate(data.baseRate);
         setMargin(data.margin);
 
+        // В расчет применяем итоговый курс с наценкой
         const calculated = parseFloat(inputAmount) * data.finalRate;
         setCalculatedAmount(
           (exchangeType === 'crypto-to-fiat' ? calculated : calculated).toFixed(exchangeType === 'crypto-to-fiat' ? 2 : 6)
