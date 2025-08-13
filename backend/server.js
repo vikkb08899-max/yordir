@@ -1313,7 +1313,24 @@ app.get('/simpleswap/currencies', async (req, res) => {
   }
 });
 
-// Прокси: SimpleSwap — минимальная сумма
+// Дублирующий маршрут с префиксом /api
+app.get('/api/simpleswap/currencies', async (req, res) => {
+  try {
+    const url = `${SIMPLESWAP_BASE}/v2/get_all_currencies?api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    const available = Array.isArray(data) ? data.filter(c => c && (c.is_enabled || c.is_available !== false)) : [];
+    res.json({ success: true, currencies: available });
+  } catch (e) {
+    console.error('❌ SimpleSwap currencies error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 app.get('/simpleswap/min', async (req, res) => {
   try {
     const { from, to, fixed } = req.query;
@@ -1334,7 +1351,27 @@ app.get('/simpleswap/min', async (req, res) => {
   }
 });
 
-// Прокси: SimpleSwap — оценка курса
+// Дублирующий маршрут с префиксом /api
+app.get('/api/simpleswap/min', async (req, res) => {
+  try {
+    const { from, to, fixed } = req.query;
+    if (!from || !to) {
+      return res.status(400).json({ success: false, error: 'from и to обязательны' });
+    }
+    const url = `${SIMPLESWAP_BASE}/v2/get_min?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, min: data.min || data, raw: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap min error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 app.get('/simpleswap/estimate', async (req, res) => {
   try {
     const { from, to, amount, fixed } = req.query;
@@ -1355,7 +1392,27 @@ app.get('/simpleswap/estimate', async (req, res) => {
   }
 });
 
-// Прокси: SimpleSwap — создание обмена
+// Дублирующий маршрут с префиксом /api
+app.get('/api/simpleswap/estimate', async (req, res) => {
+  try {
+    const { from, to, amount, fixed } = req.query;
+    if (!from || !to || !amount) {
+      return res.status(400).json({ success: false, error: 'from, to, amount обязательны' });
+    }
+    const url = `${SIMPLESWAP_BASE}/v2/get_estimated?currency_from=${encodeURIComponent(from)}&currency_to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}&fixed=${fixed === 'true' ? 'true' : 'false'}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, estimate: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap estimate error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 app.post('/simpleswap/create', async (req, res) => {
   try {
     const {
@@ -1408,8 +1465,80 @@ app.post('/simpleswap/create', async (req, res) => {
   }
 });
 
-// Прокси: SimpleSwap — статус обмена
+// Дублирующий маршрут с префиксом /api
+app.post('/api/simpleswap/create', async (req, res) => {
+  try {
+    const {
+      currency_from,
+      currency_to,
+      amount,
+      address_to,
+      fixed = false,
+      rate_id,
+      extra_id,
+      refund_address,
+      refund_extra_id,
+      user_referral
+    } = req.body || {};
+
+    if (!currency_from || !currency_to || !amount || !address_to) {
+      return res.status(400).json({ success: false, error: 'currency_from, currency_to, amount, address_to обязательны' });
+    }
+
+    const payload = {
+      api_key: SIMPLESWAP_API_KEY,
+      currency_from,
+      currency_to,
+      amount,
+      address_to,
+      fixed: !!fixed,
+      rate_id: rate_id || undefined,
+      extra_id: extra_id || undefined,
+      refund_address: refund_address || undefined,
+      refund_extra_id: refund_extra_id || undefined,
+      user_referral: user_referral || undefined
+    };
+
+    const response = await fetch(`${SIMPLESWAP_BASE}/v2/create_exchange`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+
+    const data = await response.json();
+    res.json({ success: true, exchange: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap create error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 app.get('/simpleswap/status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, error: 'id обязателен' });
+
+    const url = `${SIMPLESWAP_BASE}/v2/get_exchange?exchange_id=${encodeURIComponent(id)}&api_key=${encodeURIComponent(SIMPLESWAP_API_KEY)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ success: false, error: `SimpleSwap error ${response.status}`, details: text });
+    }
+    const data = await response.json();
+    res.json({ success: true, status: data });
+  } catch (e) {
+    console.error('❌ SimpleSwap status error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Дублирующий маршрут с префиксом /api
+app.get('/api/simpleswap/status/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'id обязателен' });
