@@ -1,8 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowUpDown, Wallet, TrendingUp, Clock, CheckCircle, ExternalLink, QrCode } from 'lucide-react';
+import { ArrowUpDown, Wallet, TrendingUp, Clock, CheckCircle, ExternalLink, QrCode, History, X, Trash2 } from 'lucide-react';
 import { createExchangeRequest, checkExchangeStatus, Currency } from '../services/exchangeApi';
 import { useExchangeRates, checkUsdtTransactions } from '../services/ratesService';
 import { useLanguage } from '../contexts/LanguageContext';
+
+// Интерфейсы для истории сделок
+interface ExchangeHistoryItem {
+  id: string;
+  requestId: string;
+  fromCurrency: Currency;
+  toCurrency: Currency;
+  fromAmount: number;
+  toAmount: number;
+  destinationAddress: string;
+  status: 'active' | 'completed' | 'cancelled' | 'expired';
+  createdAt: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  txHash?: string;
+  paymentAddress?: string;
+  exactAmountToSend?: number;
+  expirationTime?: string;
+}
+
 // Импортируем иконки
 import trxIcon from '/icon-trx.png';
 import usdtIcon from '/icon-usdt.png';
@@ -37,6 +57,24 @@ const ExchangeInterface: React.FC = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 минут в секундах
+  const [exchangeHistory, setExchangeHistory] = useState<ExchangeHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<ExchangeHistoryItem | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Загружаем историю сделок из localStorage
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('exchangeHistory');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        setExchangeHistory(history);
+      } catch (error) {
+        console.error('Ошибка при загрузке истории:', error);
+        localStorage.removeItem('exchangeHistory');
+      }
+    }
+  }, []);
 
   // Загружаем активный обмен из localStorage при инициализации
   useEffect(() => {
@@ -139,6 +177,25 @@ const ExchangeInterface: React.FC = () => {
       setExchangeCompleted(false);
       setTxHash(null);
       setTimeLeft(30 * 60); // Сбрасываем таймер на 30 минут
+
+      // Создаем запись для истории
+      const historyItem: ExchangeHistoryItem = {
+        id: Date.now().toString(),
+        requestId: response.requestId,
+        fromCurrency,
+        toCurrency,
+        fromAmount: parseFloat(fromAmount),
+        toAmount: parseFloat(response.paymentDetails.toReceive),
+        destinationAddress: destinationAddress.trim(),
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        paymentAddress: response.paymentDetails.address,
+        exactAmountToSend: response.paymentDetails.amount,
+        expirationTime: response.paymentDetails.expirationTime
+      };
+
+      // Добавляем в историю
+      addToHistory(historyItem);
 
       // Сохраняем активный обмен в localStorage
       const exchangeData = {
@@ -246,6 +303,17 @@ const ExchangeInterface: React.FC = () => {
     setQrCodeUrl('');
     setTimeLeft(30 * 60); // Сбрасываем таймер
     
+    // Обновляем статус в истории
+    if (requestId) {
+      const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+      if (activeItem) {
+        updateHistoryItem(activeItem.id, {
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString()
+        });
+      }
+    }
+    
     // Очищаем активный обмен из localStorage при отмене
     localStorage.removeItem('activeExchange');
   };
@@ -261,6 +329,36 @@ const ExchangeInterface: React.FC = () => {
   // Получение ссылки на транзакцию в TronScan
   const getTronScanUrl = (hash: string) => {
     return `https://tronscan.org/#/transaction/${hash}`;
+  };
+
+  // Функции для работы с историей сделок
+  const addToHistory = (item: ExchangeHistoryItem) => {
+    const newHistory = [item, ...exchangeHistory];
+    setExchangeHistory(newHistory);
+    localStorage.setItem('exchangeHistory', JSON.stringify(newHistory));
+  };
+
+  const updateHistoryItem = (id: string, updates: Partial<ExchangeHistoryItem>) => {
+    const newHistory = exchangeHistory.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    );
+    setExchangeHistory(newHistory);
+    localStorage.setItem('exchangeHistory', JSON.stringify(newHistory));
+  };
+
+  const clearHistory = () => {
+    setExchangeHistory([]);
+    localStorage.removeItem('exchangeHistory');
+  };
+
+  const openHistoryModal = (item: ExchangeHistoryItem) => {
+    setSelectedHistoryItem(item);
+    setShowHistoryModal(true);
+  };
+
+  const closeHistoryModal = () => {
+    setSelectedHistoryItem(null);
+    setShowHistoryModal(false);
   };
 
   // Генерация QR кода для адреса кошелька
@@ -323,25 +421,26 @@ const ExchangeInterface: React.FC = () => {
             // Очищаем активный обмен из localStorage
             localStorage.removeItem('activeExchange');
             
-            // Сохраняем завершенный обмен в историю
-            const completedExchange = {
-              requestId: requestId,
-              fromCurrency,
-              toCurrency,
-              fromAmount: parseFloat(fromAmount),
-              toAmount: parseFloat(toAmount),
-              destinationAddress,
-              txHash: statusResponse.request.txHash,
-              completedAt: new Date().toISOString(),
-              status: 'completed'
-            };
-            
-            const history = JSON.parse(localStorage.getItem('exchangeHistory') || '[]');
-            history.unshift(completedExchange); // Добавляем в начало
-            localStorage.setItem('exchangeHistory', JSON.stringify(history.slice(0, 10))); // Храним последние 10
+            // Обновляем статус в истории
+            const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+            if (activeItem) {
+              updateHistoryItem(activeItem.id, {
+                status: 'completed',
+                completedAt: new Date().toISOString(),
+                txHash: statusResponse.request.txHash || undefined
+              });
+            }
           } else if (statusResponse.request.status === 'expired') {
             setError('Время ожидания платежа истекло');
             setExchangeStarted(false);
+            
+            // Обновляем статус в истории
+            const activeItem = exchangeHistory.find(item => item.requestId === requestId && item.status === 'active');
+            if (activeItem) {
+              updateHistoryItem(activeItem.id, {
+                status: 'expired'
+              });
+            }
           } else if (statusResponse.request.status === 'error') {
             setError('Произошла ошибка при обработке платежа');
           }
@@ -418,14 +517,28 @@ const ExchangeInterface: React.FC = () => {
 
   return (
     <div id="exchange" className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 h-full">
-      <div className="flex items-center space-x-3 mb-4 md:mb-6">
-        <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-          <ArrowUpDown className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+            <ArrowUpDown className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-lg md:text-xl font-bold text-white">{t('exchange.title')}</h3>
+            <p className="text-gray-400 text-xs md:text-sm">{t('exchange.subtitle')}</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg md:text-xl font-bold text-white">{t('exchange.title')}</h3>
-          <p className="text-gray-400 text-xs md:text-sm">{t('exchange.subtitle')}</p>
-        </div>
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="flex items-center space-x-2 px-3 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-lg transition-colors"
+        >
+          <History className="w-4 h-4" />
+          <span className="text-sm font-medium">История</span>
+          {exchangeHistory.length > 0 && (
+            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+              {exchangeHistory.length}
+            </span>
+          )}
+        </button>
       </div>
       
       {/* Отображаем ошибки, если они есть */}
@@ -714,6 +827,154 @@ const ExchangeInterface: React.FC = () => {
           >
             {t('exchange.cancelExchange')}
           </button>
+        </div>
+      )}
+
+      {/* История сделок */}
+      {showHistory && (
+        <div className="mt-6 bg-gray-900/50 rounded-xl p-4 border border-gray-700/50">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-lg font-bold text-white">История сделок</h4>
+            <button
+              onClick={clearHistory}
+              className="flex items-center space-x-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="text-sm">Очистить</span>
+            </button>
+          </div>
+          
+          {exchangeHistory.length === 0 ? (
+            <div className="text-center py-8">
+              <History className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-400">История сделок пуста</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {exchangeHistory.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => openHistoryModal(item)}
+                  className="bg-gray-800/50 hover:bg-gray-700/50 rounded-lg p-3 cursor-pointer transition-colors border border-gray-700/30"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <img src={getCurrencyIcon(item.fromCurrency)} alt={item.fromCurrency} className="w-6 h-6" />
+                      <span className="text-white font-medium">{item.fromAmount}</span>
+                      <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                      <img src={getCurrencyIcon(item.toCurrency)} alt={item.toCurrency} className="w-6 h-6" />
+                      <span className="text-white font-medium">{item.toAmount}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        item.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                        item.status === 'active' ? 'bg-blue-500/20 text-blue-400' :
+                        item.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {item.status === 'completed' ? 'Завершена' :
+                         item.status === 'active' ? 'Активна' :
+                         item.status === 'cancelled' ? 'Отменена' :
+                         'Истекла'}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Модальное окно с деталями сделки */}
+      {showHistoryModal && selectedHistoryItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Детали сделки</h3>
+              <button
+                onClick={closeHistoryModal}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-gray-400 text-sm">Обмен</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    selectedHistoryItem.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                    selectedHistoryItem.status === 'active' ? 'bg-blue-500/20 text-blue-400' :
+                    selectedHistoryItem.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    {selectedHistoryItem.status === 'completed' ? 'Завершена' :
+                     selectedHistoryItem.status === 'active' ? 'Активна' :
+                     selectedHistoryItem.status === 'cancelled' ? 'Отменена' :
+                     'Истекла'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-center space-x-4 mb-4">
+                  <div className="text-center">
+                    <img src={getCurrencyIcon(selectedHistoryItem.fromCurrency)} alt={selectedHistoryItem.fromCurrency} className="w-8 h-8 mx-auto mb-2" />
+                    <span className="text-white font-bold">{selectedHistoryItem.fromAmount}</span>
+                    <div className="text-gray-400 text-sm">{selectedHistoryItem.fromCurrency}</div>
+                  </div>
+                  <ArrowUpDown className="w-6 h-6 text-gray-400" />
+                  <div className="text-center">
+                    <img src={getCurrencyIcon(selectedHistoryItem.toCurrency)} alt={selectedHistoryItem.toCurrency} className="w-8 h-8 mx-auto mb-2" />
+                    <span className="text-white font-bold">{selectedHistoryItem.toAmount}</span>
+                    <div className="text-gray-400 text-sm">{selectedHistoryItem.toCurrency}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">ID заявки:</span>
+                  <span className="text-white font-mono">{selectedHistoryItem.requestId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Адрес получателя:</span>
+                  <span className="text-white font-mono text-xs truncate max-w-[200px]">{selectedHistoryItem.destinationAddress}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Создана:</span>
+                  <span className="text-white">{new Date(selectedHistoryItem.createdAt).toLocaleString()}</span>
+                </div>
+                {selectedHistoryItem.completedAt && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Завершена:</span>
+                    <span className="text-white">{new Date(selectedHistoryItem.completedAt).toLocaleString()}</span>
+                  </div>
+                )}
+                {selectedHistoryItem.cancelledAt && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Отменена:</span>
+                    <span className="text-white">{new Date(selectedHistoryItem.cancelledAt).toLocaleString()}</span>
+                  </div>
+                )}
+                {selectedHistoryItem.txHash && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Транзакция:</span>
+                    <a 
+                      href={getTronScanUrl(selectedHistoryItem.txHash)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 text-xs truncate max-w-[200px]"
+                    >
+                      {selectedHistoryItem.txHash}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
