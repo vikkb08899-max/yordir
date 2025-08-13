@@ -63,6 +63,16 @@ const CRYPTO_IDS = {
   USDC: 'usd-coin'
 };
 
+// Маппинг криптовалют к Coinpaprika ID
+const COINPAPRIKA_IDS = {
+  TRX: 'trx-tron',
+  USDT: 'usdt-tether',
+  SOL: 'sol-solana',
+  BTC: 'btc-bitcoin',
+  ETH: 'eth-ethereum',
+  USDC: 'usdc-usd-coin'
+};
+
 // Поддерживаемые фиатные валюты
 const FIAT_CURRENCIES = ['usd', 'eur', 'pln', 'uah'];
 
@@ -123,6 +133,51 @@ const ratesStore = {
 
 // Функция для задержки
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Функция для получения курса с Coinpaprika через наш прокси
+async function fetchCoinpaprikaRate(cryptoId: string, fiatCurrency: string): Promise<number | null> {
+  const cacheKey = `${cryptoId}-${fiatCurrency}-paprika`;
+  
+  // Проверяем кэш
+  const cachedRate = ratesStore.getCachedRate(cacheKey);
+  if (cachedRate !== null) {
+    return cachedRate;
+  }
+
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), COINGECKO_CONFIG.TIMEOUT);
+
+    const response = await fetch(
+      `${API_URL}/coinpaprika/${cryptoId}/${fiatCurrency}`,
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.success && result.data && result.data.price) {
+      const rate = result.data.price;
+
+      if (rate && typeof rate === 'number') {
+        ratesStore.cacheRate(cacheKey, rate);
+        return rate;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`❌ Ошибка получения курса Coinpaprika ${cryptoId}/${fiatCurrency}:`, error);
+    return null;
+  }
+}
 
 // Функция для получения курса с CoinGecko через наш прокси
 async function fetchCoinGeckoRate(cryptoId: string, fiatCurrency: string): Promise<number | null> {
@@ -221,9 +276,23 @@ async function fetchRatesBatch(cryptoIds: string[], fiatCurrencies: string[]): P
 
   for (const cryptoId of cryptoIds) {
     for (const fiatCurrency of fiatCurrencies) {
-      const rate = await fetchCoinGeckoRate(cryptoId, fiatCurrency);
-      if (rate !== null) {
-        rates.set(`${cryptoId}-${fiatCurrency}`, rate);
+      // Определяем, какой API использовать по формату ID
+      const isCoinpaprikaId = cryptoId.includes('-');
+      
+      if (isCoinpaprikaId) {
+        // Используем Coinpaprika
+        const rate = await fetchCoinpaprikaRate(cryptoId, fiatCurrency);
+        if (rate !== null) {
+          // Преобразуем ID обратно в стандартный формат
+          const standardId = cryptoId.split('-')[0]; // берем первую часть (trx, usdt, etc.)
+          rates.set(`${standardId}-${fiatCurrency}`, rate);
+        }
+      } else {
+        // Используем CoinGecko
+        const rate = await fetchCoinGeckoRate(cryptoId, fiatCurrency);
+        if (rate !== null) {
+          rates.set(`${cryptoId}-${fiatCurrency}`, rate);
+        }
       }
       
       // Задержка между запросами
@@ -267,11 +336,15 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
   try {
     // Разбиваем криптовалюты на два батча
     const cryptoIds = Object.values(CRYPTO_IDS);
+    const coinpaprikaIds = Object.values(COINPAPRIKA_IDS);
     const batch1 = cryptoIds.slice(0, Math.ceil(cryptoIds.length / 2));
     const batch2 = cryptoIds.slice(Math.ceil(cryptoIds.length / 2));
+    const paprikaBatch1 = coinpaprikaIds.slice(0, Math.ceil(coinpaprikaIds.length / 2));
+    const paprikaBatch2 = coinpaprikaIds.slice(Math.ceil(coinpaprikaIds.length / 2));
 
-    console.log('📦 Батч 1:', batch1);
-    const rates1 = await fetchRatesBatch(batch1, FIAT_CURRENCIES);
+    console.log('📦 Батч 1 (CoinGecko):', batch1);
+    console.log('📦 Батч 1 (Coinpaprika):', paprikaBatch1);
+    const rates1 = await fetchRatesBatch(paprikaBatch1, FIAT_CURRENCIES);
     
     // Проверяем, получили ли мы хоть какие-то курсы
     if (rates1.size === 0) {
@@ -282,8 +355,9 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
     console.log('⏳ Ожидание 60 секунд перед вторым батчем...');
     await delay(COINGECKO_CONFIG.BATCH_DELAY);
     
-    console.log('📦 Батч 2:', batch2);
-    const rates2 = await fetchRatesBatch(batch2, FIAT_CURRENCIES);
+    console.log('📦 Батч 2 (CoinGecko):', batch2);
+    console.log('📦 Батч 2 (Coinpaprika):', paprikaBatch2);
+    const rates2 = await fetchRatesBatch(paprikaBatch2, FIAT_CURRENCIES);
 
     // Объединяем результаты
     const allRates = new Map([...rates1, ...rates2]);

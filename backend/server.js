@@ -888,6 +888,56 @@ app.get('/coingecko-alt/:cryptoId/:fiatCurrency', (req, res) => {
   });
 });
 
+// Прокси для Coinpaprika API
+app.get('/coinpaprika/:cryptoId/:fiatCurrency', async (req, res) => {
+  try {
+    const { cryptoId, fiatCurrency } = req.params;
+    
+    console.log(`🔄 Проксирование Coinpaprika: ${cryptoId}/${fiatCurrency}`);
+    
+    const url = `https://api.coinpaprika.com/v1/tickers/${cryptoId}/quotes/${fiatCurrency.toUpperCase()}`;
+    console.log(`📡 URL: ${url}`);
+    
+    // Проверяем доступность fetch
+    if (typeof fetch !== 'function') {
+      throw new Error('fetch недоступен на сервере');
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'CryptoXchange/1.0',
+        'Accept': 'application/json'
+      }
+    });
+    
+    console.log(`📊 Статус ответа: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Coinpaprika API error: ${response.status} ${response.statusText}`, errorText);
+      throw new Error(`Coinpaprika API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`✅ Получены данные:`, data);
+    
+    res.json({
+      success: true,
+      data: data,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Ошибка проксирования Coinpaprika API:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: error.stack
+    });
+  }
+});
+
 // API для получения всех наценок
 app.get('/margins', (req, res) => {
   res.json({

@@ -123,7 +123,7 @@ const LiveStats: React.FC = () => {
           </div>
         </div>
         
-        {/* Индикатор статических курсов */}
+        {/* Индикатор источников курсов */}
         {lastUpdate && (
           <div className="flex items-center space-x-2">
             {isLoading && (
@@ -132,9 +132,9 @@ const LiveStats: React.FC = () => {
                 <span>Обновление...</span>
               </div>
             )}
-            <div className="flex items-center space-x-2 px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs">
-              <AlertTriangle className="w-3 h-3" />
-              <span>Статические курсы</span>
+            <div className="flex items-center space-x-2 px-2 py-1 bg-green-500/20 text-green-400 rounded-lg text-xs">
+              <TrendingUp className="w-3 h-3" />
+              <span>Coinpaprika API</span>
             </div>
           </div>
         )}
