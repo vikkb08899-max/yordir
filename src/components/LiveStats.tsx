@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Users, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Activity, Users, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useExchangeRates } from '../services/ratesService';
 
 interface Transaction {
   id: string;
@@ -21,6 +22,7 @@ const LiveStats: React.FC = () => {
     avgExchangeRate: 1.0821
   });
   const { t } = useLanguage();
+  const { rates, lastUpdate, isLoading } = useExchangeRates();
 
   // Generate random crypto-fiat transactions
   useEffect(() => {
@@ -110,14 +112,32 @@ const LiveStats: React.FC = () => {
 
   return (
           <div id="stats" className="bg-gray-900/80 backdrop-blur-lg rounded-2xl border border-gray-800 p-6">
-      <div className="flex items-center space-x-3 mb-4 md:mb-6">
-        <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-          <Activity className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+            <Activity className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-lg md:text-xl font-bold text-white">Live Statistics</h3>
+            <p className="text-gray-400 text-xs md:text-sm">Real-time platform activity</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg md:text-xl font-bold text-white">Live Statistics</h3>
-          <p className="text-gray-400 text-xs md:text-sm">Real-time platform activity</p>
-        </div>
+        
+        {/* Индикатор статических курсов */}
+        {lastUpdate && (
+          <div className="flex items-center space-x-2">
+            {isLoading && (
+              <div className="flex items-center space-x-2 px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                <span>Обновление...</span>
+              </div>
+            )}
+            <div className="flex items-center space-x-2 px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs">
+              <AlertTriangle className="w-3 h-3" />
+              <span>Статические курсы</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}

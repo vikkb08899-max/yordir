@@ -842,6 +842,17 @@ app.get('/coingecko-alt/:cryptoId/:fiatCurrency', (req, res) => {
         const jsonData = JSON.parse(data);
         console.log(`✅ Получены данные:`, jsonData);
         
+        // Проверяем на ошибки CoinGecko API
+        if (jsonData.status && jsonData.status.error_code) {
+          console.error(`❌ CoinGecko API error: ${jsonData.status.error_code} - ${jsonData.status.error_message}`);
+          res.status(500).json({
+            success: false,
+            error: `CoinGecko API error: ${jsonData.status.error_code}`,
+            details: jsonData.status.error_message
+          });
+          return;
+        }
+        
         res.json({
           success: true,
           data: jsonData,

@@ -47,9 +47,9 @@ const DEFAULT_RATES: ExchangeRates = {
 // Конфигурация для CoinGecko API
 const COINGECKO_CONFIG = {
   BASE_URL: 'https://api.coingecko.com/api/v3',
-  UPDATE_INTERVAL: 5 * 60 * 1000, // 5 минут
-  BATCH_DELAY: 30 * 1000, // 30 секунд между батчами
-  REQUEST_DELAY: 1000, // 1 секунда между запросами
+  UPDATE_INTERVAL: 15 * 60 * 1000, // 15 минут (увеличено из-за лимитов)
+  BATCH_DELAY: 60 * 1000, // 60 секунд между батчами (увеличено)
+  REQUEST_DELAY: 2000, // 2 секунды между запросами (увеличено)
   TIMEOUT: 10000, // 10 секунд таймаут
 };
 
@@ -234,6 +234,19 @@ async function fetchRatesBatch(cryptoIds: string[], fiatCurrencies: string[]): P
   return rates;
 }
 
+// Функция для принудительного использования статических курсов
+function useStaticRates(): RatesResponse {
+  console.log('📊 Используем статические курсы из-за лимитов API');
+  const lastUpdate = new Date().toISOString();
+  ratesStore.updateRates(DEFAULT_RATES, lastUpdate);
+  
+  return {
+    success: true,
+    rates: DEFAULT_RATES,
+    lastUpdate
+  };
+}
+
 // Функция для получения всех курсов обмена
 export async function fetchExchangeRates(): Promise<RatesResponse> {
   console.log(`[${new Date().toLocaleTimeString()}] 🔄 Проверка необходимости обновления курсов...`);
@@ -260,7 +273,13 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
     console.log('📦 Батч 1:', batch1);
     const rates1 = await fetchRatesBatch(batch1, FIAT_CURRENCIES);
     
-    console.log('⏳ Ожидание 30 секунд перед вторым батчем...');
+    // Проверяем, получили ли мы хоть какие-то курсы
+    if (rates1.size === 0) {
+      console.log('⚠️ Первый батч не вернул курсов, используем статические');
+      return useStaticRates();
+    }
+    
+    console.log('⏳ Ожидание 60 секунд перед вторым батчем...');
     await delay(COINGECKO_CONFIG.BATCH_DELAY);
     
     console.log('📦 Батч 2:', batch2);
@@ -268,6 +287,12 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
 
     // Объединяем результаты
     const allRates = new Map([...rates1, ...rates2]);
+
+    // Если получили слишком мало курсов, используем статические
+    if (allRates.size < 5) {
+      console.log(`⚠️ Получили только ${allRates.size} курсов, используем статические`);
+      return useStaticRates();
+    }
 
     // Формируем объект курсов
     const exchangeRates: ExchangeRates = { ...DEFAULT_RATES };
@@ -303,11 +328,8 @@ export async function fetchExchangeRates(): Promise<RatesResponse> {
   } catch (error: any) {
     console.error('❌ Ошибка при обновлении курсов:', error.message);
     
-    return {
-      success: false,
-      rates: ratesStore.rates,
-      lastUpdate: ratesStore.lastUpdate
-    };
+    // При любой ошибке используем статические курсы
+    return useStaticRates();
   } finally {
     ratesStore.setLoading(false);
   }
@@ -351,7 +373,7 @@ export function useExchangeRates() {
     return unsubscribe;
   }, []);
 
-  // Запускаем обновление курсов каждые 5 минут
+  // Запускаем обновление курсов каждые 15 минут
   useEffect(() => {
     const interval = setInterval(() => {
       fetchExchangeRates();
