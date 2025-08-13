@@ -9,9 +9,7 @@ const Footer: React.FC = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
+              <img src="/logo.png" alt="CryptoXchange" className="w-10 h-10 rounded-lg" />
               <div>
                 <h1 className="text-xl font-bold text-white">CryptoXchange</h1>
                 <p className="text-xs text-gray-400">Global Crypto Exchange</p>

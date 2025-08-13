@@ -29,9 +29,7 @@ const Header: React.FC = () => {
           {/* Logo Section */}
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
-                <TrendingUp className="w-7 h-7 text-white" />
-              </div>
+              <img src="/logo.png" alt="CryptoXchange" className="w-12 h-12 rounded-xl shadow-lg" />
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
             </div>
             <div>
