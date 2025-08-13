@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Menu, X, Wallet, Bell, User, Shield, FileText } from 'lucide-react';
+import { TrendingUp, Menu, X, Wallet, Bell, User, Shield, FileText, Globe } from 'lucide-react';
 import { useExchangeRates } from '../services/ratesService';
 import { useLanguage } from '../contexts/LanguageContext';
 // Импортируем иконки
@@ -10,7 +10,7 @@ const Header: React.FC = () => {
   const [change, setChange] = useState(2.45);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { rates, isLoading } = useExchangeRates();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   // Вычисляем цену TRX в USDT
   const price = rates.TRX_TO_USDT;
@@ -87,6 +87,15 @@ const Header: React.FC = () => {
             </nav>
             
             <div className="flex items-center space-x-3">
+              {/* Language Switcher */}
+              <button 
+                className="flex items-center space-x-2 px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                onClick={() => setLanguage(language === 'ru' ? 'en' : 'ru')}
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-sm font-medium">{language === 'ru' ? 'RU' : 'EN'}</span>
+              </button>
+              
               <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
                 <Bell className="w-5 h-5" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
@@ -151,6 +160,15 @@ const Header: React.FC = () => {
                   <FileText className="w-5 h-5" />
                   <span className="font-medium">{t('footer.terms')}</span>
                 </a>
+                
+                {/* Mobile Language Switcher */}
+                <button 
+                  className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-gray-800/50 w-full"
+                  onClick={() => setLanguage(language === 'ru' ? 'en' : 'ru')}
+                >
+                  <Globe className="w-5 h-5" />
+                  <span className="font-medium">{language === 'ru' ? 'Русский' : 'English'}</span>
+                </button>
               </nav>
             </div>
           </div>
