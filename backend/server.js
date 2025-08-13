@@ -21,13 +21,32 @@ if (TELEGRAM_BOT_TOKEN) {
     let message = '📊 *Текущие наценки:*\n\n';
     const inlineKeyboard = [];
     
+    // Группируем наценки по валютам
+    const groupedMargins = {};
     Object.entries(currentMargins).forEach(([pair, margin]) => {
+      const [from, to] = pair.split('-');
+      if (!groupedMargins[to]) groupedMargins[to] = [];
+      groupedMargins[to].push({ pair, margin });
       message += `${pair}: ${margin}%\n`;
+    });
+    
+    // Добавляем кнопки для отдельных пар
+    Object.entries(currentMargins).forEach(([pair, margin]) => {
       inlineKeyboard.push([{
         text: `${pair} (${margin}%)`,
         callback_data: `rate_${pair}`
       }]);
     });
+    
+    // Добавляем кнопки для массового изменения
+    inlineKeyboard.push([
+      { text: '💰 Все к USD', callback_data: 'mass_usd' },
+      { text: '💶 Все к EUR', callback_data: 'mass_eur' }
+    ]);
+    inlineKeyboard.push([
+      { text: '🇵🇱 Все к PLN', callback_data: 'mass_pln' },
+      { text: '🇺🇦 Все к UAH', callback_data: 'mass_uah' }
+    ]);
     
     bot.sendMessage(chatId, message, {
       parse_mode: 'Markdown',
@@ -51,6 +70,33 @@ if (TELEGRAM_BOT_TOKEN) {
     currentMargins[pair] = margin;
     bot.sendMessage(chatId, `✅ Наценка для пары ${pair} установлена: ${margin}%`);
   });
+
+  // Команда для массового изменения наценок
+  bot.onText(/\/mass (\S+) (\d+(?:\.\d+)?)/, (msg, match) => {
+    const chatId = msg.chat.id;
+    const currency = match[1].toUpperCase();
+    const margin = parseFloat(match[2]);
+    
+    if (margin < 0 || margin > 50) {
+      bot.sendMessage(chatId, '❌ Наценка должна быть от 0 до 50%');
+      return;
+    }
+    
+    const cryptos = ['TRX', 'BTC', 'ETH', 'USDC', 'SOL', 'USDT'];
+    let updatedCount = 0;
+    
+    cryptos.forEach(crypto => {
+      if (crypto !== currency) {
+        const pair = `${crypto}-${currency}`;
+        const reversePair = `${currency}-${crypto}`;
+        currentMargins[pair] = margin;
+        currentMargins[reversePair] = margin;
+        updatedCount += 2;
+      }
+    });
+    
+    bot.sendMessage(chatId, `✅ Наценка ${margin}% установлена для ${updatedCount} пар к ${currency}`);
+  });
   
   // Обработка callback запросов
   bot.on('callback_query', (callbackQuery) => {
@@ -65,6 +111,16 @@ if (TELEGRAM_BOT_TOKEN) {
         `Текущая наценка для ${pair}: ${currentMargin}%\n\n` +
         `Для изменения используйте команду:\n` +
         `/rate ${pair} НОВАЯ_НАЦЕНКА`
+      );
+    } else if (data.startsWith('mass_')) {
+      const currency = data.replace('mass_', '').toUpperCase();
+      const currentMargin = 5; // По умолчанию 5%
+      
+      bot.sendMessage(message.chat.id, 
+        `Для установки наценки ${currentMargin}% на все пары к ${currency} используйте команду:\n` +
+        `/mass ${currency} ${currentMargin}\n\n` +
+        `Или для установки другой наценки:\n` +
+        `/mass ${currency} НОВАЯ_НАЦЕНКА`
       );
     }
     
@@ -99,18 +155,48 @@ let currentExchangeRates = {}; // Прямые курсы пар
 let activeExchanges = new Map(); // requestId -> exchangeData
 
 let currentMargins = {
-  'TRX-USDT': 2,
-  'USDT-TRX': 3,
-  'TRX-EUR': 5,
-  'EUR-TRX': 7,
-  'USDT-EUR': 3,
-  'EUR-USDT': 5,
-  'BTC-EUR': 2,
-  'EUR-BTC': 3,
-  'ETH-EUR': 2,
-  'EUR-ETH': 3,
-  'USDC-EUR': 3,
-  'EUR-USDC': 5
+  // TRX пары
+  'TRX-USDT': 2, 'USDT-TRX': 3,
+  'TRX-EUR': 5, 'EUR-TRX': 7,
+  'TRX-USD': 5, 'USD-TRX': 7,
+  'TRX-PLN': 5, 'PLN-TRX': 7,
+  'TRX-UAH': 5, 'UAH-TRX': 7,
+  
+  // BTC пары
+  'BTC-USDT': 2, 'USDT-BTC': 3,
+  'BTC-EUR': 2, 'EUR-BTC': 3,
+  'BTC-USD': 2, 'USD-BTC': 3,
+  'BTC-PLN': 2, 'PLN-BTC': 3,
+  'BTC-UAH': 2, 'UAH-BTC': 3,
+  
+  // ETH пары
+  'ETH-USDT': 2, 'USDT-ETH': 3,
+  'ETH-EUR': 2, 'EUR-ETH': 3,
+  'ETH-USD': 2, 'USD-ETH': 3,
+  'ETH-PLN': 2, 'PLN-ETH': 3,
+  'ETH-UAH': 2, 'UAH-ETH': 3,
+  
+  // SOL пары
+  'SOL-USDT': 2, 'USDT-SOL': 3,
+  'SOL-EUR': 2, 'EUR-SOL': 3,
+  'SOL-USD': 2, 'USD-SOL': 3,
+  'SOL-PLN': 2, 'PLN-SOL': 3,
+  'SOL-UAH': 2, 'UAH-SOL': 3,
+  
+  // USDC пары
+  'USDC-USDT': 3, 'USDT-USDC': 3,
+  'USDC-EUR': 3, 'EUR-USDC': 5,
+  'USDC-USD': 3, 'USD-USDC': 3,
+  'USDC-PLN': 3, 'PLN-USDC': 5,
+  'USDC-UAH': 3, 'UAH-USDC': 5,
+  
+  // Фиатные пары
+  'EUR-USD': 3, 'USD-EUR': 3,
+  'EUR-PLN': 3, 'PLN-EUR': 3,
+  'EUR-UAH': 3, 'UAH-EUR': 3,
+  'USD-PLN': 3, 'PLN-USD': 3,
+  'USD-UAH': 3, 'UAH-USD': 3,
+  'PLN-UAH': 3, 'UAH-PLN': 3
 };
 
 let lastRatesUpdate = null;
@@ -168,6 +254,10 @@ async function updateBinanceRates() {
                 currentExchangeRates['USDC-USDT'] = parseFloat(item.price);
                 currentExchangeRates['USDT-USDC'] = 1 / parseFloat(item.price);
                 break;
+              case 'SOLUSDT':
+                currentExchangeRates['SOL-USDT'] = parseFloat(item.price);
+                currentExchangeRates['USDT-SOL'] = 1 / parseFloat(item.price);
+                break;
               case 'EURUSDT':
                 currentExchangeRates['EUR-USDT'] = parseFloat(item.price);
                 currentExchangeRates['USDT-EUR'] = 1 / parseFloat(item.price);
@@ -211,6 +301,11 @@ async function updateBinanceRates() {
             currentExchangeRates['EUR-USDC'] = currentExchangeRates['EUR-USDT'] / currentExchangeRates['USDC-USDT'];
           }
 
+          if (currentExchangeRates['SOL-USDT'] && currentExchangeRates['EUR-USDT']) {
+            currentExchangeRates['SOL-EUR'] = currentExchangeRates['SOL-USDT'] / currentExchangeRates['EUR-USDT'];
+            currentExchangeRates['EUR-SOL'] = currentExchangeRates['EUR-USDT'] / currentExchangeRates['SOL-USDT'];
+          }
+
           // Кросс-курсы будут вычислены после получения всех базовых курсов
 
           // Обновляем старые курсы для совместимости
@@ -224,14 +319,19 @@ async function updateBinanceRates() {
           lastRatesUpdate = new Date();
           console.log(`✅ Курсы обновлены [${lastRatesUpdate.toLocaleTimeString()}]`);
           console.log(`   TRX/USDT: ${currentExchangeRates['TRX-USDT']?.toFixed(6) || 'N/A'}`);
+          console.log(`   SOL/USDT: ${currentExchangeRates['SOL-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   EUR/USDT: ${currentExchangeRates['EUR-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   USD/USDT: ${currentExchangeRates['USD-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   PLN/USDT: ${currentExchangeRates['PLN-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   UAH/USDT: ${currentExchangeRates['UAH-USDT']?.toFixed(4) || 'N/A'}`);
           console.log(`   BTC/EUR: ${currentExchangeRates['BTC-EUR']?.toFixed(2) || 'N/A'}`);
+          console.log(`   SOL/EUR: ${currentExchangeRates['SOL-EUR']?.toFixed(2) || 'N/A'}`);
           console.log(`   BTC/USD: ${currentExchangeRates['BTC-USD']?.toFixed(2) || 'N/A'}`);
+          console.log(`   SOL/USD: ${currentExchangeRates['SOL-USD']?.toFixed(2) || 'N/A'}`);
           console.log(`   BTC/PLN: ${currentExchangeRates['BTC-PLN']?.toFixed(2) || 'N/A'}`);
+          console.log(`   SOL/PLN: ${currentExchangeRates['SOL-PLN']?.toFixed(2) || 'N/A'}`);
           console.log(`   BTC/UAH: ${currentExchangeRates['BTC-UAH']?.toFixed(2) || 'N/A'}`);
+          console.log(`   SOL/UAH: ${currentExchangeRates['SOL-UAH']?.toFixed(2) || 'N/A'}`);
           
           resolve();
 
