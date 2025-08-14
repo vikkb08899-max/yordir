@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Banknote, MapPin, Phone, Send, Globe, CheckCircle } from 'lucide-react';
+import { Banknote, MapPin, Phone, Send, Globe, CheckCircle, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useExchangeRates } from '../services/ratesService';
 // Импортируем иконки
@@ -51,42 +51,25 @@ const CryptoFiat: React.FC = () => {
 
   // Доступные страны и города
   const countries: Country[] = [
-    {
-      code: 'DE',
-      name: getCountryName('DE'),
-      flag: '🇩🇪',
-      cities: getCities('DE')
-    },
-    {
-      code: 'FR',
-      name: getCountryName('FR'),
-      flag: '🇫🇷',
-      cities: getCities('FR')
-    },
-    {
-      code: 'IT',
-      name: getCountryName('IT'),
-      flag: '🇮🇹',
-      cities: getCities('IT')
-    },
-    {
-      code: 'ES',
-      name: getCountryName('ES'),
-      flag: '🇪🇸',
-      cities: getCities('ES')
-    },
-    {
-      code: 'PL',
-      name: getCountryName('PL'),
-      flag: '🇵🇱',
-      cities: getCities('PL')
-    },
-    {
-      code: 'UA',
-      name: getCountryName('UA'),
-      flag: '🇺🇦',
-      cities: getCities('UA')
-    }
+    { code: 'PL', name: getCountryName('PL'), flag: '🇵🇱', cities: getCities('PL') },
+    { code: 'DE', name: getCountryName('DE'), flag: '🇩🇪', cities: getCities('DE') },
+    { code: 'ES', name: getCountryName('ES'), flag: '🇪🇸', cities: getCities('ES') },
+    { code: 'IT', name: getCountryName('IT'), flag: '🇮🇹', cities: getCities('IT') },
+    { code: 'FR', name: getCountryName('FR'), flag: '🇫🇷', cities: getCities('FR') },
+    { code: 'PT', name: getCountryName('PT'), flag: '🇵🇹', cities: getCities('PT') },
+    { code: 'CZ', name: getCountryName('CZ'), flag: '🇨🇿', cities: getCities('CZ') },
+    { code: 'LT', name: getCountryName('LT'), flag: '🇱🇹', cities: getCities('LT') },
+    { code: 'LV', name: getCountryName('LV'), flag: '🇱🇻', cities: getCities('LV') },
+    { code: 'SK', name: getCountryName('SK'), flag: '🇸🇰', cities: getCities('SK') },
+    { code: 'SI', name: getCountryName('SI'), flag: '🇸🇮', cities: getCities('SI') },
+    { code: 'HU', name: getCountryName('HU'), flag: '🇭🇺', cities: getCities('HU') },
+    { code: 'EE', name: getCountryName('EE'), flag: '🇪🇪', cities: getCities('EE') },
+    { code: 'NL', name: getCountryName('NL'), flag: '🇳🇱', cities: getCities('NL') },
+    { code: 'AT', name: getCountryName('AT'), flag: '🇦🇹', cities: getCities('AT') },
+    { code: 'GR', name: getCountryName('GR'), flag: '🇬🇷', cities: getCities('GR') },
+    { code: 'BG', name: getCountryName('BG'), flag: '🇧🇬', cities: getCities('BG') },
+    { code: 'MC', name: getCountryName('MC'), flag: '🇲🇨', cities: getCities('MC') },
+    { code: 'US', name: getCountryName('US'), flag: '🇺🇸', cities: getCities('US') }
   ];
 
   // Функция для получения иконки криптовалюты
@@ -364,38 +347,44 @@ const CryptoFiat: React.FC = () => {
         {/* Выбор страны */}
         <div>
                       <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.country')}</label>
-          <select
-            value={selectedCountry?.code || ''}
-            onChange={(e) => {
-              const country = countries.find(c => c.code === e.target.value);
-              setSelectedCountry(country || null);
-              setSelectedCity(''); // Сбрасываем город при смене страны
-            }}
-            className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
-          >
-                          <option value="">{t('cryptoFiat.selectCountry')}</option>
-            {countries.map((country) => (
-              <option key={country.code} value={country.code} className="bg-gray-800 text-white">
-                {country.flag} {country.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedCountry?.code || ''}
+              onChange={(e) => {
+                const country = countries.find(c => c.code === e.target.value);
+                setSelectedCountry(country || null);
+                setSelectedCity('');
+              }}
+              className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
+            >
+              <option value="">{t('cryptoFiat.selectCountry')}</option>
+              {countries.map((country) => (
+                <option key={country.code} value={country.code} className="bg-gray-800 text-white">
+                  {country.flag} {country.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-5 h-5 text-gray-300 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
 
         {/* Выбор города */}
         {selectedCountry && (
           <div>
             <label className="block text-gray-400 text-sm mb-3">{t('cryptoFiat.city')}</label>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
-            >
-              <option value="">{t('cryptoFiat.selectCity')}</option>
-              {selectedCountry.cities.map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full bg-white/10 backdrop-blur-lg text-white rounded-lg p-3 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 border border-white/20"
+              >
+                <option value="">{t('cryptoFiat.selectCity')}</option>
+                {selectedCountry.cities.map((city) => (
+                  <option key={city} value={city} className="bg-gray-800 text-white">{city}</option>
+                ))}
+              </select>
+              <ChevronDown className="w-5 h-5 text-gray-300 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
         )}
 
