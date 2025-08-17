@@ -146,7 +146,8 @@
     "GR": "Greece",
     "BG": "Bulgaria",
     "MC": "Monaco",
-    "US": "United States"
+    "US": "United States",
+    "RU": "Russia"
   },
   "cities": {
     "PL": ["Warsaw", "Krakow", "Wroclaw", "Poznan", "Gdansk", "Lodz", "Szczecin", "Lublin", "Rzeszow", "Przemysl"],
@@ -167,7 +168,8 @@
     "GR": ["Athens", "Thessaloniki"],
     "BG": ["Sofia", "Varna", "Burgas"],
     "MC": ["Monaco"],
-    "US": ["Miami"]
+    "US": ["Miami"],
+    "RU": ["Moscow"]
   },
   "privacy": {
     "title": "Privacy Policy",

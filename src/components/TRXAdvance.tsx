@@ -69,7 +69,8 @@ const CryptoFiat: React.FC = () => {
     { code: 'GR', name: getCountryName('GR'), flag: '🇬🇷', cities: getCities('GR') },
     { code: 'BG', name: getCountryName('BG'), flag: '🇧🇬', cities: getCities('BG') },
     { code: 'MC', name: getCountryName('MC'), flag: '🇲🇨', cities: getCities('MC') },
-    { code: 'US', name: getCountryName('US'), flag: '🇺🇸', cities: getCities('US') }
+    { code: 'US', name: getCountryName('US'), flag: '🇺🇸', cities: getCities('US') },
+    { code: 'RU', name: getCountryName('RU'), flag: '🇷🇺', cities: getCities('RU') }
   ];
 
   // Функция для получения иконки криптовалюты
